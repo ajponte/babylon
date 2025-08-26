@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "server"
+version = "0.1.0"
+description = "Babylon Server"
+authors = ["Alan Ponte <alanjponte@gmail.com>"]
+readme = "README.md"
+#packages = [{ include = "your_package_name" }]  # or remove if not using a package dir
+
+[tool.poetry.dependencies]
+python = "^3.13"
+SQLAlchemy = "^2.0"
+psycopg2-binary = "^2.9"
+alembic = "^1.12"
+flask = "^3.1.2"
+flask-cors = "^6.0.1"
+hvac = "^2.3.0"
+
+[tool.poetry.group.test.dependencies]
+black = "25.1.0"
+mypy = "^1.17.1"
+pylint = "3.3.7"
+pytest="^8.4.1"
+SQLAlchemy = "^2.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
