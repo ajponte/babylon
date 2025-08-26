@@ -1,0 +1,115 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table Users {
+  id uuid [primary key]
+  username varchar
+  role varchar
+  status Status
+  created_at timestamp
+  modified_at timestamp
+}
+
+Enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+Table Account {
+  id uuid [ primary key]
+  owner uuid [not null]
+  name string [note: 'Account conanical name']
+  created_at timestamp
+  modified_at timestamp
+}
+
+
+Enum Month {
+  JAN
+  FEB
+  MAR
+  APR
+  MAY
+  JUN
+  JUL
+  AUG
+  SEP
+  OCT
+  NOV
+  DEC
+}
+
+Table AccountMonthSnapshot {
+  id uuid [primary key]
+  month Month
+  year date
+  account uuid [ref: -Account.id]
+  ingress uuid [ref: - AccountSummaryIngressDetails.id]
+  egress uuid [ref: - AccountSummaryEgressDetails.id]
+  created_at timestamp
+  modified_at timestamp
+}
+
+
+Table AccountSummaryIngressDetails {
+    id uuid [ primary key]
+    total string [default: 0]
+    created_at timestamp
+    modified_at timestamp
+}
+
+Table AccountSummaryIngressEvent {
+    id uuid [ primary key]
+    total string [default: 0]
+    date_posted datetime
+    source IngressSource [ref: -IngresSource.id]
+    created_at timestamp
+    modified_at timestamp
+}
+
+Table IngresSource {
+  id uuid [ primary key]
+  name string [note: 'User-Defined Source']
+  created_at datetime
+  modified_at datetime
+}
+
+Table EgressSource {
+  id uuid [ primary key]
+  name string [note: 'User-Defined Source']
+  created_at datetime
+  modified_at datetime
+}
+
+Table AccountSummaryEgressDetailsSourceEvent {
+  id uuid [ primary key]
+  event uuid [ref: - AccountSummaryEgressEvent.id]
+  details uuid [ref: -AccountSummaryEgressDetails.id]
+  created_at timestamp
+  modified_at timestamp
+}
+
+Table AccountSummaryEgressEvent {
+    id uuid [ primary key]
+    total string [default: 0]
+    date_posted datetime
+    source EgressSource [ref: -EgressSource.id]
+    created_at timestamp
+    modified_at timestamp
+}
+
+Table AccountSummaryInressDetailsSourceEvent {
+  id uuid [ primary key]
+  details uuid [ref: -AccountSummaryIngressDetails.id]
+  event uuid [ref: <AccountSummaryIngressEvent.id, null]
+  created_at datetime
+  modified_at datetime
+}
+
+Table AccountSummaryEgressDetails {
+    id uuid [ primary key]
+    total string [default: 0]
+    created_at timestamp
+    modified_at timestamp
+}
+
