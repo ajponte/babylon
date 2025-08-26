@@ -90,7 +90,7 @@ def get_environment_variable(
         if required_key:
             raise MissingEnvironmentValueError(key)
         # Return (and convert) the default value
-        return converter(default) if converter else default
+        return converter(default) if converter else default # type: ignore
 
     # Fetch and convert the environment value.
     val = os.environ[key]

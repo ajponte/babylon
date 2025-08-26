@@ -901,6 +901,48 @@ files = [
 ]
 
 [[package]]
+name = "types-flask-cors"
+version = "6.0.0.20250809"
+description = "Typing stubs for Flask-Cors"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_flask_cors-6.0.0.20250809-py3-none-any.whl", hash = "sha256:f6d660dddab946779f4263cb561bffe275d86cb8747ce02e9fec8d340780131b"},
+    {file = "types_flask_cors-6.0.0.20250809.tar.gz", hash = "sha256:24380a2b82548634c0931d50b9aafab214eea9f85dcc04f15ab1518752a7e6aa"},
+]
+
+[package.dependencies]
+Flask = ">=2.0.0"
+
+[[package]]
+name = "types-hvac"
+version = "2.3.0.20250809"
+description = "Typing stubs for hvac"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_hvac-2.3.0.20250809-py3-none-any.whl", hash = "sha256:adb68f0c7d7182b635f747cce6d659ca96ce882ae93cb2c1d850fc43fa2deb65"},
+    {file = "types_hvac-2.3.0.20250809.tar.gz", hash = "sha256:1d8f6c6a69c8015d097f09ed2ae1f53171c6112556770131b642914f1dcae6a4"},
+]
+
+[package.dependencies]
+types-requests = "*"
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20250809"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_requests-2.32.4.20250809-py3-none-any.whl", hash = "sha256:f73d1832fb519ece02c85b1f09d5f0dd3108938e7d47e7f94bbfa18a6782b163"},
+    {file = "types_requests-2.32.4.20250809.tar.gz", hash = "sha256:d8060de1c8ee599311f56ff58010fb4902f462a1470802cf9f6ed27bc46c4df3"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -948,4 +990,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "b37a2f968c549eaa4bb556725d10713089150e0df0812ed8e0be501a99cc5aed"
+content-hash = "2582c98becb8109f08c817b2dc1bae4dd84237dd5202a5db14926a80cd2e9f47"

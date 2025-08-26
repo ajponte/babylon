@@ -1,6 +1,8 @@
 """App factory."""
 import logging
 import datetime as dt
+from typing import Any
+
 from flask import Flask, request
 from flask_cors import CORS
 
@@ -31,7 +33,7 @@ def _setup_config(flask_app: Flask):
 
     :param flask_app: The flask app.
     """
-    config = {}
+    config: dict[str, Any] = {}
     update_config_from_environment(config)
     update_config_from_secrets(config)
     flask_app.config.from_mapping(config)
@@ -69,8 +71,8 @@ def _register_app_extensions(flask_app: Flask):
     # Init logs
     logs.init_app(flask_app)
     with flask_app.app_context():
-        flask_app.Database = Database(flask_app.config, BASE)
-        flask_app.Database.attach_to_flask_app(
+        flask_app.Database = Database(flask_app.config, BASE) # type: ignore
+        flask_app.Database.attach_to_flask_app( # type: ignore
             flask_app=flask_app,
             create_tables=flask_app.config.get('SQLALCHEMY_INIT_TABLES', False)
         )

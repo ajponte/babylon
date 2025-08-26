@@ -14,6 +14,8 @@ alembic = "^1.12"
 flask = "^3.1.2"
 flask-cors = "^6.0.1"
 hvac = "^2.3.0"
+types-hvac = "^2.3.0.20250809"
+types-flask-cors = "^6.0.0.20250809"
 
 [tool.poetry.group.test.dependencies]
 black = "25.1.0"

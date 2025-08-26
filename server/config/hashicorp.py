@@ -18,7 +18,7 @@ class SecretsManagerException(Exception):
         return self._message
 
     @property
-    def cause(self) -> Exception:
+    def cause(self) -> Exception | None:
         return self._cause
 
 class OpenBaoApiClient:
@@ -116,7 +116,7 @@ class BaoSecretsManager(AbstractSecretsManager):
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             # Cache this instance.
-            cls._instance = super(BaoSecretsManager, cls).__new__(cls)
+            cls._instance = super(BaoSecretsManager, cls).__new__(cls) # type: ignore
             # Cache an openbao API client.
             cls._instance.client = OpenBaoApiClient()
         else:
@@ -128,7 +128,7 @@ class BaoSecretsManager(AbstractSecretsManager):
         path: str,
         secret: dict
     ) -> bool:
-        response: dict = self._instance.client.add_secret_value(
+        response: dict = self._instance.client.add_secret_value( # type: ignore
             path=path,
             secret=secret
         )
@@ -145,7 +145,7 @@ class BaoSecretsManager(AbstractSecretsManager):
     def get_secret(self, path: str, key: str) -> dict:
         if self._secrets is None:
             print(f"Secrets under {path} not cached.")
-            resp = self._instance.client.read_secret_values(path=path)
+            resp = self._instance.client.read_secret_values(path=path) # type: ignore
             if not resp:
                 raise SecretsManagerException(f'No secrets returned under path {path}')
             self._secrets = resp
