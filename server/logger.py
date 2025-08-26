@@ -14,6 +14,7 @@ from logging.config import dictConfig
 
 class LogSetup:
     """Logging object."""
+
     def __init__(self, app=None, **kwargs):
         if app is not None:
             self.init_app(app, **kwargs)
@@ -58,7 +59,11 @@ class LogSetup:
         }
         std_logger = {
             "loggers": {
-                "": {"level": logging_level, "handlers": ["default"], "propagate": True},
+                "": {
+                    "level": logging_level,
+                    "handlers": ["default"],
+                    "propagate": True,
+                },
                 "app.access": {
                     "level": logging_level,
                     "handlers": ["access_logs"],

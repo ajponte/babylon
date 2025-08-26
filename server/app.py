@@ -1,4 +1,5 @@
 """App factory."""
+
 import logging
 import datetime as dt
 from typing import Any
@@ -6,11 +7,15 @@ from typing import Any
 from flask import Flask, request
 from flask_cors import CORS
 
-from server.config.config import update_config_from_environment, update_config_from_secrets
+from server.config.config import (
+    update_config_from_environment,
+    update_config_from_secrets,
+)
 from server.db import Database
 from server.logger import logs
 from server.models import BASE
 from server.health import health
+
 
 def create_app() -> Flask:
     """
@@ -26,6 +31,7 @@ def create_app() -> Flask:
     _setup_health_route(app)
 
     return app
+
 
 def _setup_config(flask_app: Flask):
     """
@@ -62,6 +68,7 @@ def _setup_config(flask_app: Flask):
         )
         return response
 
+
 def _register_app_extensions(flask_app: Flask):
     """
     Register flask app extensions.
@@ -71,11 +78,12 @@ def _register_app_extensions(flask_app: Flask):
     # Init logs
     logs.init_app(flask_app)
     with flask_app.app_context():
-        flask_app.Database = Database(flask_app.config, BASE) # type: ignore
-        flask_app.Database.attach_to_flask_app( # type: ignore
+        flask_app.Database = Database(flask_app.config, BASE)  # type: ignore
+        flask_app.Database.attach_to_flask_app(  # type: ignore
             flask_app=flask_app,
-            create_tables=flask_app.config.get('SQLALCHEMY_INIT_TABLES', False)
+            create_tables=flask_app.config.get("SQLALCHEMY_INIT_TABLES", False),
         )
+
 
 def _setup_health_route(flask_app: Flask):
     """
@@ -83,4 +91,4 @@ def _setup_health_route(flask_app: Flask):
 
     :param flask_app: The app.
     """
-    flask_app.add_url_rule('/health', view_func=health)
+    flask_app.add_url_rule("/health", view_func=health)

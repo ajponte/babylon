@@ -58,8 +58,10 @@ class MissingEnvironmentValueError(ConfigError):
         """
         super().__init__(f"Missing Environment variable for key: {key}")
 
+
 class MissingSecretsKey(ConfigError):
     """Raise this error when there's no secret key found for a path."""
+
     def __init__(self, path: str, key: str):
         """
         Constructor.
@@ -68,6 +70,7 @@ class MissingSecretsKey(ConfigError):
         :param key: The key for which no value is present.
         """
         super().__init__(f"Missing Secret Key {key} at path {path}")
+
 
 class InvalidEnvironmentVariableError(ConfigError):
     """Raise this error when there's a value for a specific key,
@@ -106,13 +109,14 @@ def get_environment_variable(
         if required_key:
             raise MissingEnvironmentValueError(key)
         # Return (and convert) the default value
-        return converter(default) if converter else default # type: ignore
+        return converter(default) if converter else default  # type: ignore
 
     # Fetch and convert the environment value.
     val = os.environ[key]
     return converter(val) if converter else val
 
-def get_secret_value(path: str, key: str, converter: Converter| None = None) -> Any:
+
+def get_secret_value(path: str, key: str, converter: Converter | None = None) -> Any:
     """
     Return the secret value for the key at the path.
 
@@ -126,7 +130,8 @@ def get_secret_value(path: str, key: str, converter: Converter| None = None) -> 
     secrets: dict = secrets_manager.get_secret(path=path, key=key)
     if key not in secrets.values():
         raise MissingSecretsKey(path=path, key=key)
-    return converter(secrets['val']) if converter else secrets['val']
+    return converter(secrets["val"]) if converter else secrets["val"]
+
 
 def load_config(*, key: str, value: str) -> str:
     """
@@ -161,11 +166,9 @@ def required(*, key: str, converter: Converter | None = None) -> Loader:
 
     return loader
 
+
 def required_secret(
-        *,
-        key: str,
-        path: str | None = None,
-        converter: Converter | None = None
+    *, key: str, path: str | None = None, converter: Converter | None = None
 ) -> Loader:
     """
     Fetch a required secret from the secrets manager (as converted if needed).
@@ -178,11 +181,11 @@ def required_secret(
              the loader as a higher-order function, which when invoked will
              return the key, value pair as a Tuple.
     """
-    path = path or os.environ['OPENBAO_SECRETS_PATH']
+    path = path or os.environ["OPENBAO_SECRETS_PATH"]
+
     def loader() -> tuple[str, Any]:
-        return key, get_secret_value(
-            key=key, path=path, converter=converter
-        )
+        return key, get_secret_value(key=key, path=path, converter=converter)
+
     return loader
 
 
@@ -221,6 +224,7 @@ def to_bool(val: Union[str, bool]) -> bool:
     if val.casefold() == "true".casefold():
         return True
     raise ValueError(f"{val!r} could not be converted to a boolean type.")
+
 
 def to_int(val: Union[str, int, float]) -> int:
     """Convert the value to an integer."""
