@@ -1,12 +1,13 @@
 """Application-level configs."""
 from typing import Any
 
-from server.config.confload import Loader, required, required_secret, optional, to_bool, to_int
+from server.config.confload import Loader, required, required_secret, optional, to_int
 
 
 def make_sqlalchemy_url(
         engine: str='sqlite'
 ) -> str:
+    """Return a sqlaclchemy DB url."""
     if engine == 'sqlite':
         return f'{engine}://'
     raise ValueError(f'Unknown engine: {engine}')

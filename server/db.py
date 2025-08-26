@@ -1,6 +1,6 @@
 """Database driver."""
 from typing import Any
-from flask import current_app, g, Flask
+from flask import Flask
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import create_engine
 
@@ -8,6 +8,7 @@ DATABASE_EXTENSION_KEY = 'db'
 SESSION_APP_CTX_KEY = '_session'
 
 class Database:
+    """Database Driver."""
     def __init__(self, config: dict[str, Any], sqlalchemy_base):
         """
         Constructor.

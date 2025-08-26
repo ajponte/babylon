@@ -1,29 +1,45 @@
 # Note: This script is very much for dev/test purposes only.
 """Utils for interacting with Hashicorp/Openbao."""
-import os
-from typing import Any
-
-import hvac
-
 from abc import ABC, abstractmethod
+from typing import Any
+import os
+import hvac
 
 
 class SecretsManagerException(Exception):
+    """Throw this error for issues with a secrets manager."""
     def __init__(self, message: str, cause: Exception | None = None):
+        """
+        Constructor.
+
+        :param message: Error message.
+        :param cause: Optional throwable cause.
+        """
         self._message = message
         self._cause = cause
 
     @property
     def message(self) -> str:
+        """
+        Return the message.
+
+        :return: The message.
+        """
         return self._message
 
     @property
     def cause(self) -> Exception | None:
+        """
+        Return the cause.
+
+        :return: The cause.
+        """
         return self._cause
 
 class OpenBaoApiClient:
     """API client wrapper for OpenBao."""
     def __init__(self):
+        """Constructor."""
         # todo: Add RSA cert
         self._client = hvac.Client(
             # `BAO_ADDR`, `VAULT_TOKEN` are the suggested env var names from Hashicorp.
@@ -87,10 +103,7 @@ class OpenBaoApiClient:
 
 
 class AbstractSecretsManager(ABC):
-    """Abstract implementation for a secrets manager."""
-
-    """
-    Singleton implementation of a secrets manager.
+    """Abstract implementation for a secrets manager.
     Based on skeletons from
     https://refactoring.guru/design-patterns/singleton/python/example#example-0
     """
@@ -113,6 +126,7 @@ class BaoSecretsManager(AbstractSecretsManager):
     _instance: OpenBaoApiClient| None = None
     _secrets: dict[str, Any] | None = None
 
+    # pylint: disable=unused-argument
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:
             # Cache this instance.
@@ -152,7 +166,7 @@ class BaoSecretsManager(AbstractSecretsManager):
         if key not in self._secrets:
             raise SecretsManagerException(f'Secret {path}/{key} not found.')
         # Create a new Secret data type
-        return dict(key=key, val=self._secrets[key])
+        return {'key': key, 'val': self._secrets[key]}
 
 
 # def test_bao_api_client():

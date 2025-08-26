@@ -18,15 +18,31 @@ class ConfigError(Exception):
     """Raise this error when there's an issue with loading a config value."""
 
     def __init__(self, message: str, cause: Exception | None = None):
+        """
+        Constructor.
+
+        :param message: Error message.
+        :param cause: Optional throwable cause.
+        """
         self._message = message
         self._cause = cause
 
     @property
     def message(self) -> str:
+        """
+        Return the error message.
+
+        :return: The message.
+        """
         return self._message
 
     @property
     def cause(self) -> Exception | None:
+        """
+        Return the cause.
+
+        :return: The cause.
+        """
         return self._cause
 
 
@@ -211,5 +227,5 @@ def to_int(val: Union[str, int, float]) -> int:
     try:
         # The value is assumed to be in integer.
         return int(val)
-    except Exception:
-        raise ValueError(f"{val!r} could not be converted to a integer type.")
+    except Exception as e:
+        raise ValueError(f"{val!r} could not be converted to a integer type.") from e

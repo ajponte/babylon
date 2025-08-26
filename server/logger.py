@@ -1,23 +1,30 @@
+# pylint: disable=line-too-long
+# pylint: disable=too-few-public-methods
 """Logging wrapper."""
-
-import os
 from logging.config import dictConfig
 
-# Inspired by https://github.com/tenable/flask-logging-demo/blob/master/single_file_app_pattern/flask_logs.py
+# Inspired by: https://github.com/tenable/flask-logging-demo/blob/master/single_file_app_pattern/flask_logs.py
 # See https://medium.com/tenable-techblog/the-boring-stuff-flask-logging-21c3a5dd0392
-"""
-We have options in python for stdout (streamhandling) and file logging
-File logging has options for a Rotating file based on size or time (daily)
-or a watched file, which supports logrotate style rotation
-Most of the changes happen in the handlers, lets define a few standards
-"""
 
-class LogSetup(object):
+# We have options in python for stdout (streamhandling) and file logging
+# File logging has options for a Rotating file based on size or time (daily)
+# or a watched file, which supports logrotate style rotation
+# Most of the changes happen in the handlers, lets define a few standards
+
+
+class LogSetup:
+    """Logging object."""
     def __init__(self, app=None, **kwargs):
         if app is not None:
             self.init_app(app, **kwargs)
 
     def init_app(self, app):
+        # pylint: disable=too-many-locals
+        """
+        Initialize logging for a flask app.
+
+        :param app: The flask app.
+        """
         log_type = app.config["LOG_TYPE"]
         logging_level = app.config["LOG_LEVEL"]
         if log_type != "stream":
@@ -26,7 +33,8 @@ class LogSetup(object):
                 app_log_file_name = app.config["APP_LOG_NAME"]
                 access_log_file_name = app.config["WWW_LOG_NAME"]
             except KeyError as e:
-                exit(code="{} is a required parameter for log_type '{}'".format(e, log_type))
+                # pylint: disable=consider-using-sys-exit
+                exit(code=f"{e} is a required parameter for log_type '{log_type}'")
             app_log = "/".join([log_directory, app_log_file_name])
             www_log = "/".join([log_directory, access_log_file_name])
 
@@ -80,6 +88,7 @@ class LogSetup(object):
                     "default": {
                         "level": logging_level,
                         "class": logging_policy,
+                        # pylint: disable=possibly-used-before-assignment
                         "filename": app_log,
                         "formatter": "default",
                         "delay": True,
@@ -87,6 +96,7 @@ class LogSetup(object):
                     "access_logs": {
                         "level": logging_level,
                         "class": logging_policy,
+                        # pylint: disable=possibly-used-before-assignment
                         "filename": www_log,
                         "formatter": "access",
                         "delay": True,
