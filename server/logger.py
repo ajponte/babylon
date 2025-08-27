@@ -21,6 +21,7 @@ STDOUT_DEFAULTS = {
 }
 
 def get_defaults() -> dict[str, str]:
+    """Return default logging policy."""
     return STDOUT_DEFAULTS
 
 class LogSetup:

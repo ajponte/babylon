@@ -4,10 +4,10 @@ import logging
 from http import HTTPStatus
 import sys # Import the 'sys' module
 
-from connexion import FlaskApp
-from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
 import datetime as dt
 from typing import Any
+from connexion import FlaskApp
+from werkzeug.exceptions import NotFound
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -40,7 +40,6 @@ def create_app() -> Flask:
             strict_validation=True
         )
     except Exception as e:
-        print(f"Error: Unable to load API specification. The application cannot start.")
         logging.error("Failed to load OpenAPI spec: %s", e)
         sys.exit(1) # Exit the application gracefully
     flask_app = app.app

@@ -438,6 +438,11 @@ disable=raw-checker-failed,
         use-implicit-booleaness-not-comparison-to-zero,
         use-symbolic-message-instead,
         fixme,
+        # Allow f-string interpolation in logs to enable
+        # a cleaner idiomatic convention. The trade-off
+        # of course, this is a trade-off with CPU utilization,
+        # but that is less of a concern in today's age.
+        logging-fstring-interpolation
 
 
 # Enable the message, report, category or checker with the given id(s). You can
