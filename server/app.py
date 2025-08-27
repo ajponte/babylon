@@ -6,7 +6,7 @@ import sys
 
 import datetime as dt
 from typing import Any
-from connexion import FlaskApp # type: ignore
+from connexion import FlaskApp  # type: ignore
 from werkzeug.exceptions import NotFound
 
 from flask import Flask, request, jsonify
