@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: Echo API
+  version: 1.0.0
+  description: A simple API to echo a value back to the user.
+
+servers:
+  - url: /api
+
+paths:
+  /echo:
+    get:
+      operationId: server.controllers.echo.do_echo
+      summary: Echo a value back
+      description: Returns the value provided in the query parameter, or an empty string if omitted.
+      parameters:
+        - name: value
+          in: query
+          required: false
+          description: The value to be echoed back.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning the echoed value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EchoResponse'
+              examples:
+                success:
+                  value:
+                    echoed_value: "hello world"
+                empty_string:
+                  value:
+                    echoed_value: ""
+
+components:
+  schemas:
+    EchoResponse:
+      type: object
+      properties:
+        echoed_value:
+          type: string
+          description: The value that was echoed back.

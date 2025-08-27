@@ -12,6 +12,20 @@ from logging.config import dictConfig
 # Most of the changes happen in the handlers, lets define a few standards
 
 
+STDOUT_DEFAULTS = {
+    "LOG_TYPE": "stream",
+    "LOG_LEVEL": "INFO",
+    "LOG_DIR": "",
+    "APP_LOG_NAME": "default",
+    "WWW_LOG_NAME": "",
+}
+
+
+def get_defaults() -> dict[str, str]:
+    """Return default logging policy."""
+    return STDOUT_DEFAULTS
+
+
 class LogSetup:
     """Logging object."""
 
@@ -19,20 +33,22 @@ class LogSetup:
         if app is not None:
             self.init_app(app, **kwargs)
 
-    def init_app(self, app):
+    def init_app(self, app, **kwargs):
         # pylint: disable=too-many-locals
         """
         Initialize logging for a flask app.
 
         :param app: The flask app.
         """
-        log_type = app.config["LOG_TYPE"]
-        logging_level = app.config["LOG_LEVEL"]
+        initialize_defaults: bool = kwargs.get("default_policy", False)
+        app_config: dict = app.config if not initialize_defaults else STDOUT_DEFAULTS
+        log_type = app_config["LOG_TYPE"]
+        logging_level = app_config["LOG_LEVEL"]
         if log_type != "stream":
             try:
-                log_directory = app.config["LOG_DIR"]
-                app_log_file_name = app.config["APP_LOG_NAME"]
-                access_log_file_name = app.config["WWW_LOG_NAME"]
+                log_directory = app_config["LOG_DIR"]
+                app_log_file_name = app_config["APP_LOG_NAME"]
+                access_log_file_name = app_config["WWW_LOG_NAME"]
             except KeyError as e:
                 # pylint: disable=consider-using-sys-exit
                 exit(code=f"{e} is a required parameter for log_type '{log_type}'")
@@ -44,8 +60,8 @@ class LogSetup:
         elif log_type == "watched":
             logging_policy = "logging.handlers.WatchedFileHandler"
         else:
-            log_max_bytes = app.config["LOG_MAX_BYTES"]
-            log_copies = app.config["LOG_COPIES"]
+            log_max_bytes = app_config["LOG_MAX_BYTES"]
+            log_copies = app_config["LOG_COPIES"]
             logging_policy = "logging.handlers.RotatingFileHandler"
 
         std_format = {
