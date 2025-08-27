@@ -2,11 +2,11 @@
 
 import logging
 from http import HTTPStatus
-import sys  # Import the 'sys' module
+import sys
 
 import datetime as dt
 from typing import Any
-from connexion import FlaskApp
+from connexion import FlaskApp # type: ignore
 from werkzeug.exceptions import NotFound
 
 from flask import Flask, request, jsonify
