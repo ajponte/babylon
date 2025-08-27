@@ -8,6 +8,7 @@ import hvac
 
 _LOGGER = logging.getLogger()
 
+
 class SecretsManagerException(Exception):
     """Throw this error for issues with a secrets manager."""
 

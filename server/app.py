@@ -2,7 +2,7 @@
 
 import logging
 from http import HTTPStatus
-import sys # Import the 'sys' module
+import sys  # Import the 'sys' module
 
 import datetime as dt
 from typing import Any
@@ -23,7 +23,8 @@ from server.health import health
 
 # todo: Temporary fix
 USE_DEFAULT_LOGGING_POLICY = True
-DEFAULT_SWAGGER_API_SOURCE = 'test-api.yml'
+DEFAULT_SWAGGER_API_SOURCE = "test-api.yml"
+
 
 def create_app() -> Flask:
     """
@@ -37,11 +38,11 @@ def create_app() -> Flask:
             specification=DEFAULT_SWAGGER_API_SOURCE,
             pythonic_params=True,
             validate_responses=True,
-            strict_validation=True
+            strict_validation=True,
         )
     except Exception as e:
         logging.error("Failed to load OpenAPI spec: %s", e)
-        sys.exit(1) # Exit the application gracefully
+        sys.exit(1)  # Exit the application gracefully
     flask_app = app.app
     _setup_logging(flask_app)
     _setup_config(flask_app)
@@ -52,23 +53,27 @@ def create_app() -> Flask:
     _setup_http_error_handling(flask_app)
     return flask_app
 
+
 def _setup_http_error_handling(flask_app):
     _handle_error_unknown(flask_app)
     # Add a catch-all handler for any exception that isn't handled by a more specific handler.
     _handle_base_exception(flask_app)
     _handle_not_found(flask_app)
 
+
 def _handle_error_unknown(flask_app: Flask):
     """
     Hande a response from the server when an unknown error is encountered.
     """
+
     @flask_app.errorhandler(500)
     def error(e: Any | None):
         resp = {
-            'message': f'Unknown server error: {str(e)}',
-            'status': HTTPStatus.INTERNAL_SERVER_ERROR
+            "message": f"Unknown server error: {str(e)}",
+            "status": HTTPStatus.INTERNAL_SERVER_ERROR,
         }
         return jsonify(resp)
+
     # flask_app.register_error_handler(error)
 
 
@@ -76,25 +81,26 @@ def _handle_base_exception(flask_app: Flask):
     """
     Handle any base exception and return a generic 500 error response.
     """
+
     @flask_app.errorhandler(Exception)
     def handle_base_exception(e):
         resp = {
-            'message': f'A base exception was caught: {str(e)}',
-            'status': HTTPStatus.INTERNAL_SERVER_ERROR
+            "message": f"A base exception was caught: {str(e)}",
+            "status": HTTPStatus.INTERNAL_SERVER_ERROR,
         }
         return jsonify(resp), 500
+
 
 def _handle_not_found(flask_app: Flask):
     """
     Handle 404 Not Found errors.
     """
+
     @flask_app.errorhandler(NotFound)
     def handle_not_found_error(e):
-        resp = {
-            'message': f'Not Found: {str(e)}',
-            'status': HTTPStatus.NOT_FOUND
-        }
+        resp = {"message": f"Not Found: {str(e)}", "status": HTTPStatus.NOT_FOUND}
         return jsonify(resp), 404
+
 
 def _setup_logging(
     flask_app: Flask,
@@ -104,6 +110,7 @@ def _setup_logging(
     """
     # Init logs
     logs.init_app(flask_app, default_policy=USE_DEFAULT_LOGGING_POLICY)
+
     # For request logging
     @flask_app.after_request
     def after_request(response):
@@ -128,6 +135,7 @@ def _setup_logging(
         )
         return response
 
+
 def _setup_config(flask_app: Flask):
     """
     Set up the flask app config.
@@ -141,7 +149,7 @@ def _setup_config(flask_app: Flask):
 
 
 def _register_app_extensions(
-        flask_app: Flask,
+    flask_app: Flask,
 ):
     """
     Register flask app extensions.

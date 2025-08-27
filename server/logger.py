@@ -13,16 +13,18 @@ from logging.config import dictConfig
 
 
 STDOUT_DEFAULTS = {
-    'LOG_TYPE': 'stream',
-    'LOG_LEVEL': 'INFO',
-    'LOG_DIR': '',
-    'APP_LOG_NAME': 'default',
-    'WWW_LOG_NAME': '',
+    "LOG_TYPE": "stream",
+    "LOG_LEVEL": "INFO",
+    "LOG_DIR": "",
+    "APP_LOG_NAME": "default",
+    "WWW_LOG_NAME": "",
 }
+
 
 def get_defaults() -> dict[str, str]:
     """Return default logging policy."""
     return STDOUT_DEFAULTS
+
 
 class LogSetup:
     """Logging object."""
@@ -31,18 +33,14 @@ class LogSetup:
         if app is not None:
             self.init_app(app, **kwargs)
 
-    def init_app(
-        self,
-        app,
-        **kwargs
-    ):
+    def init_app(self, app, **kwargs):
         # pylint: disable=too-many-locals
         """
         Initialize logging for a flask app.
 
         :param app: The flask app.
         """
-        initialize_defaults: bool = kwargs.get('default_policy', False)
+        initialize_defaults: bool = kwargs.get("default_policy", False)
         app_config: dict = app.config if not initialize_defaults else STDOUT_DEFAULTS
         log_type = app_config["LOG_TYPE"]
         logging_level = app_config["LOG_LEVEL"]
