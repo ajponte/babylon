@@ -10,6 +10,7 @@ servers:
 paths:
   /echo:
     get:
+      operationId: server.controllers.echo.do_echo
       summary: Echo a value back
       description: Returns the value provided in the query parameter, or an empty string if omitted.
       parameters:

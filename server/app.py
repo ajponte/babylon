@@ -1,11 +1,15 @@
 """App factory."""
 
 import logging
+from http import HTTPStatus
+import sys # Import the 'sys' module
+
 from connexion import FlaskApp
+from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
 import datetime as dt
 from typing import Any
 
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from server.config.config import (
@@ -28,12 +32,17 @@ def create_app() -> Flask:
     :return: The new Flask app.
     """
     app = FlaskApp(__name__)
-    app.add_api(
-        specification=DEFAULT_SWAGGER_API_SOURCE,
-        pythonic_params=True,
-        validate_responses=True,
-        strict_validation=True
-    )
+    try:
+        app.add_api(
+            specification=DEFAULT_SWAGGER_API_SOURCE,
+            pythonic_params=True,
+            validate_responses=True,
+            strict_validation=True
+        )
+    except Exception as e:
+        print(f"Error: Unable to load API specification. The application cannot start.")
+        logging.error("Failed to load OpenAPI spec: %s", e)
+        sys.exit(1) # Exit the application gracefully
     flask_app = app.app
     _setup_logging(flask_app)
     _setup_config(flask_app)
@@ -41,8 +50,63 @@ def create_app() -> Flask:
     # Enable Cross-Origin Resource Sharing (currently for dev).
     CORS(flask_app)
     _setup_health_route(flask_app)
-
+    _setup_http_error_handling(flask_app)
     return flask_app
+
+def _setup_http_error_handling(flask_app):
+    _handle_error_unknown(flask_app)
+    _handle_error_bad_request(flask_app)
+    # Add a catch-all handler for any exception that isn't handled by a more specific handler.
+    _handle_base_exception(flask_app)
+    _handle_not_found(flask_app)
+
+def _handle_error_unknown(flask_app: Flask):
+    """
+    Hande a response from the server when an unknown error is encountered.
+    """
+    @flask_app.errorhandler(500)
+    def error(e: Any | None):
+        resp = {
+            'message': f'Unknown server error: {str(e)}',
+            'status': HTTPStatus.INTERNAL_SERVER_ERROR
+        }
+        return jsonify(resp)
+    # flask_app.register_error_handler(error)
+
+def _handle_error_bad_request(flask_app: Flask):
+    @flask_app.errorhandler(400)
+    def handle_bad_request(e=None):
+        error_message = f"Bad request error: {str(e)}"
+        resp = {
+            'message': error_message,
+            'status': HTTPStatus.BAD_REQUEST
+        }
+        return jsonify(resp)
+    # flask_app.register_error_handler(handle_bad_request)
+
+def _handle_base_exception(flask_app: Flask):
+    """
+    Handle any base exception and return a generic 500 error response.
+    """
+    @flask_app.errorhandler(Exception)
+    def handle_base_exception(e):
+        resp = {
+            'message': f'A base exception was caught: {str(e)}',
+            'status': HTTPStatus.INTERNAL_SERVER_ERROR
+        }
+        return jsonify(resp), 500
+
+def _handle_not_found(flask_app: Flask):
+    """
+    Handle 404 Not Found errors.
+    """
+    @flask_app.errorhandler(NotFound)
+    def handle_not_found_error(e):
+        resp = {
+            'message': f'Not Found: {str(e)}',
+            'status': HTTPStatus.NOT_FOUND
+        }
+        return jsonify(resp), 404
 
 def _setup_logging(
     flask_app: Flask,
@@ -52,6 +116,29 @@ def _setup_logging(
     """
     # Init logs
     logs.init_app(flask_app, default_policy=USE_DEFAULT_LOGGING_POLICY)
+    # For request logging
+    @flask_app.after_request
+    def after_request(response):
+        """
+        Application logging.
+
+        :param response: Application response.
+        :return: response
+        """
+        logger = logging.getLogger("app.access")
+        logger.info(
+            "%s [%s] %s %s %s %s %s %s %s",
+            request.remote_addr,
+            dt.datetime.now().strftime("%d/%b/%Y:%H:%M:%S.%f")[:-3],
+            request.method,
+            request.path,
+            request.scheme,
+            response.status,
+            response.content_length,
+            request.referrer,
+            request.user_agent,
+        )
+        return response
 
 def _setup_config(flask_app: Flask):
     """
@@ -63,30 +150,6 @@ def _setup_config(flask_app: Flask):
     update_config_from_environment(config)
     update_config_from_secrets(config)
     flask_app.config.from_mapping(config)
-
-    # # For request logging
-    # @flask_app.after_request
-    # def after_request(response):
-    #     """
-    #     Application logging.
-    #
-    #     :param response: Application response.
-    #     :return: response
-    #     """
-    #     logger = logging.getLogger("app.access")
-    #     logger.info(
-    #         "%s [%s] %s %s %s %s %s %s %s",
-    #         request.remote_addr,
-    #         dt.datetime.now().strftime("%d/%b/%Y:%H:%M:%S.%f")[:-3],
-    #         request.method,
-    #         request.path,
-    #         request.scheme,
-    #         response.status,
-    #         response.content_length,
-    #         request.referrer,
-    #         request.user_agent,
-    #     )
-    #     return response
 
 
 def _register_app_extensions(
