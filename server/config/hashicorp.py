@@ -4,7 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Any
 import os
 import hvac
+import logging
 
+_LOGGER = logging.getLogger()
 
 class SecretsManagerException(Exception):
     """Throw this error for issues with a secrets manager."""
@@ -50,7 +52,7 @@ class OpenBaoApiClient:
             token=os.environ.get("VAULT_TOKEN", None),
         )
         self.__is_authenticated(self._client)
-        print("Hashicorp Secrets client authenticated.")
+        _LOGGER.info("Hashicorp Secrets client authenticated.")
 
     # Testing for now. Needs to be removed for a production system.
     def add_secret_value(self, *, path: str, secret: dict) -> dict:
@@ -66,11 +68,11 @@ class OpenBaoApiClient:
             create_response = self._client.secrets.kv.v2.create_or_update_secret(
                 path=path, secret=secret
             )
-            print(f"Set secret value at path {path}")
+            _LOGGER.info(f"Set secret value at path {path}")
             return create_response
         except Exception as e:
             message = f"Exception while setting secret value at path {path}"
-            print(message)
+            _LOGGER.exception(message)
             raise SecretsManagerException(message, cause=e) from e
 
     def read_secret_values(self, *, path: str) -> dict:
@@ -89,12 +91,12 @@ class OpenBaoApiClient:
                 raise_on_deleted_version=False,
             )["data"]
             ver = read_response["metadata"]["version"]
-            print(f"Found secrets version: {ver}")
-            print(f"Successfully read secrets from path {path}")
+            _LOGGER.debug(f"Found secrets version: {ver}")
+            _LOGGER.debug(f"Successfully read secrets from path {path}")
             return read_response["data"]
         except Exception as e:
             message = f"Exception while reading secret values at path {path}"
-            print(message)
+            _LOGGER.exception(message)
             raise SecretsManagerException(message, cause=e) from e
 
     @classmethod
@@ -137,7 +139,7 @@ class BaoSecretsManager(AbstractSecretsManager):
             # Cache an openbao API client.
             cls._instance.client = OpenBaoApiClient()
         else:
-            print("Instance already exists. Returning cached.")
+            _LOGGER.info("Instance already exists. Returning cached.")
         return cls._instance
 
     def add_secret(self, path: str, secret: dict) -> bool:
@@ -146,7 +148,7 @@ class BaoSecretsManager(AbstractSecretsManager):
         )
         # todo: Add more validations.
         if not response:
-            print("No response from client")
+            _LOGGER.info("No response from client")
             return False
         if not self._secrets:
             self._secrets = secret
@@ -156,7 +158,7 @@ class BaoSecretsManager(AbstractSecretsManager):
 
     def get_secret(self, path: str, key: str) -> dict:
         if self._secrets is None:
-            print(f"Secrets under {path} not cached.")
+            _LOGGER.info(f"Secrets under {path} not cached.")
             resp = self._instance.client.read_secret_values(path=path)  # type: ignore
             if not resp:
                 raise SecretsManagerException(f"No secrets returned under path {path}")

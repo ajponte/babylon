@@ -16,6 +16,7 @@ flask-cors = "^6.0.1"
 hvac = "^2.3.0"
 types-hvac = "^2.3.0.20250809"
 types-flask-cors = "^6.0.0.20250809"
+connexion = { version = "^3.2.0", extras = ["flask", "swagger-ui", "uvicorn"] }
 
 [tool.poetry.group.test.dependencies]
 black = "25.1.0"

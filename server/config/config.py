@@ -16,7 +16,7 @@ CONFIG_LOADERS: list[Loader] = [
     # These are optional for now. Later decide which should be required.
     required(key="BAO_ADDR"),
     required(key="OPENBAO_SECRETS_PATH"),
-    optional(key="LOG_TYPE", default_val="stream"),
+    optional(key="LOG_TYPE", default_val="stdout"),
     optional(key="LOG_LEVEL", default_val="DEBUG"),
     optional(key="SQLALCHEMY_DATABASE_URL", default_val=make_sqlalchemy_url()),
     optional(key="SQLALCHEMY_POOL_RECYCLE", default_val="3600", converter=to_int),
