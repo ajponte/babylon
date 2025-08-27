@@ -55,7 +55,6 @@ def create_app() -> Flask:
 
 def _setup_http_error_handling(flask_app):
     _handle_error_unknown(flask_app)
-    _handle_error_bad_request(flask_app)
     # Add a catch-all handler for any exception that isn't handled by a more specific handler.
     _handle_base_exception(flask_app)
     _handle_not_found(flask_app)
@@ -73,16 +72,6 @@ def _handle_error_unknown(flask_app: Flask):
         return jsonify(resp)
     # flask_app.register_error_handler(error)
 
-def _handle_error_bad_request(flask_app: Flask):
-    @flask_app.errorhandler(400)
-    def handle_bad_request(e=None):
-        error_message = f"Bad request error: {str(e)}"
-        resp = {
-            'message': error_message,
-            'status': HTTPStatus.BAD_REQUEST
-        }
-        return jsonify(resp)
-    # flask_app.register_error_handler(handle_bad_request)
 
 def _handle_base_exception(flask_app: Flask):
     """
