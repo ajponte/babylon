@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # The OpenBao service, which your application can use for secrets management.
+  openbao:
+    image: openbao/openbao:latest
+    container_name: openbao
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK # Required by OpenBao to prevent memory from being swapped to disk.
+    ports:
+      - "8200:8200" # Exposes the OpenBao API port.
+    volumes:
+      - openbao_data:/openbao/data # Persists the OpenBao data.
+    environment:
+      # This tells OpenBao to run in "dev" mode, which is great for local development.
+      # It automatically initializes the server and provides a root token.
+      - BAO_DEV_ROOT_TOKEN_ID=dev-token
+      - BAO_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+      - BAO_LOG_LEVEL=info
+
+  # Your Gunicorn application service.
+  babylon-app:
+    image: babylon-app:latest # Make sure you have this image built locally.
+    container_name: babylon-app
+    restart: unless-stopped
+    ports:
+      - "5001:8000" # Maps host port 5001 to the container's port 8000.
+    depends_on:
+      - openbao # Ensures OpenBao starts before your application.
+    environment:
+      # These environment variables link your app to the OpenBao container.
+      # The hostname `openbao` is automatically resolved by Docker Compose.
+      - BAO_ADDR=http://openbao:8200
+      - BAO_TOKEN=dev-token
+      # Your application's other environment variables go here
+      # For example:
+      # - DB_CONNECTION_STRING=...
+      # - FLASK_SECRET_KEY=...
+
+# Define the volume for persistent OpenBao data.
+volumes:
+  openbao_data:
