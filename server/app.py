@@ -1,12 +1,13 @@
 """App factory."""
-
 import logging
 from http import HTTPStatus
 import sys
 
 import datetime as dt
+from pathlib import Path
 from typing import Any
 from connexion import FlaskApp  # type: ignore
+from connexion.options import SwaggerUIOptions
 from werkzeug.exceptions import NotFound
 
 from flask import Flask, request, jsonify
@@ -16,6 +17,7 @@ from server.config.config import (
     update_config_from_environment,
     update_config_from_secrets,
 )
+
 from server.db import Database
 from server.logger import logs
 from server.models import BASE
@@ -26,20 +28,28 @@ USE_DEFAULT_LOGGING_POLICY = True
 DEFAULT_SWAGGER_API_SOURCE = "test-api.yml"
 
 
-def create_app() -> Flask:
+def create_app() -> FlaskApp:
     """
     Create a new Flask app.
 
     :return: The new Flask app.
     """
+    spec_path = get_api_spec_path(DEFAULT_SWAGGER_API_SOURCE)
+    spec_dir = get_api_spec_dir()
+    # options = {"swagger_ui": True}
+    print(f'spec dir: {spec_dir}')
+    print(f'full spec path: {spec_path}')
+    # app = FlaskApp(__name__, specification_dir=spec_dir, pythonic_params=True, validate_responses=True, strict_validation=True)
     app = FlaskApp(__name__)
+    print('Successfully create flask app from connexion factory.')
     try:
         app.add_api(
-            specification=DEFAULT_SWAGGER_API_SOURCE,
+            specification=spec_path,
             pythonic_params=True,
             validate_responses=True,
             strict_validation=True,
         )
+        print('Successfully added API spec')
     except Exception as e:
         logging.error("Failed to load OpenAPI spec: %s", e)
         sys.exit(1)  # Exit the application gracefully
@@ -48,10 +58,10 @@ def create_app() -> Flask:
     _setup_config(flask_app)
     _register_app_extensions(flask_app)
     # Enable Cross-Origin Resource Sharing (currently for dev).
-    CORS(flask_app)
+    # CORS(flask_app)
     _setup_health_route(flask_app)
     _setup_http_error_handling(flask_app)
-    return flask_app
+    return app
 
 
 def _setup_http_error_handling(flask_app):
@@ -173,3 +183,31 @@ def _setup_health_route(flask_app: Flask):
     :param flask_app: The app.
     """
     flask_app.add_url_rule("/health", view_func=health)
+
+
+def get_api_spec_dir() -> Path:
+    base_dir = Path(__file__).parent.parent
+
+    api_dir = base_dir/'api_spec'
+
+    return api_dir
+
+def get_api_spec_path(filename: str) -> Path:
+    """
+    Returns a pathlib.Path object for a given API spec filename.
+
+    This function assumes the API specification files are located in the
+    './api_spec/' directory relative to the current working directory.
+
+    :param filename: The name of the API specification file (e.g., "test-api.yml").
+
+    :return: Path: A Path object representing the full path to the API spec file.
+    """
+    # Get the base directory of the project (parent of the current file's directory)
+    base_dir = Path(__file__).parent.parent
+
+    # Construct the full path to the API spec file
+    api_spec_path = base_dir / 'api_spec' / filename
+
+    # Return the Path object
+    return api_spec_path
