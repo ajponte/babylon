@@ -2,7 +2,8 @@
 """Represents egress, (money in) from a specific account."""
 from typing import Optional
 from datetime import datetime, date
-from sqlalchemy.orm import Mapped, mapped_column
+
+from sqlalchemy.orm import Mapped, mapped_column, Session
 from sqlalchemy.types import Enum, Text, String, Integer
 from server.models import BASE, create_random_uuid_hex, IngressTransactionSource
 
@@ -23,3 +24,20 @@ class EgressTransaction(BASE):
     slip_number: Optional[Mapped[str]] = mapped_column(Text)
 
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+    @classmethod
+    def get_transaction_by_id(
+        cls,
+        id: str,
+        session: Session
+    ) -> list:
+        """
+        Return any transactions by ID.
+
+        :param id: ID
+        :param session: SQLAlchemy Session.
+        :return: The transaction, or null
+        """
+        egress_tx = session.get(cls, id).all()
+        return egress_tx
