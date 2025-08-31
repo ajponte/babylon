@@ -1,4 +1,5 @@
 """Database driver."""
+
 import logging
 from typing import Any
 from flask import Flask, g
@@ -54,7 +55,7 @@ class Database:
         """
         session = g.get(SESSION_APP_CTX_KEY, None)
         if not session:
-            logging.info('No session object cached. Creating a new one')
+            logging.info("No session object cached. Creating a new one")
             session = sessionmaker(bind=self._engine)
 
         return session
