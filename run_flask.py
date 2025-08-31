@@ -4,6 +4,9 @@ from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from server.app import create_app
 from server.config.hashicorp import OpenBaoApiClient
 
+FLASK_PORT = 5003
+FLASK_HOST = '0.0.0.0'
+
 DEFAULT_BAO_ADDRESS = 'http://127.0.0.1:8200'
 DEFAULT_BAO_VAULT_TOKEN = 'dev-only-token'
 SECRETS_PATH = 'test'
@@ -31,15 +34,14 @@ def main():
     _set_secrets()
     parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
     # -h conflicts, so using -n for hostname flag instead of -h
-    parser.add_argument('-n', dest='host', default='0.0.0.0', help="Hostname")
-    parser.add_argument('-p', dest='port', type=int, default=8080, help="Port")
-    parser.add_argument('-d', dest='debug', type=bool, default=True, help="Debug True/False")
+    parser.add_argument('-n', dest='host', default=FLASK_HOST, help="Hostname")
+    parser.add_argument('-p', dest='port', type=int, default=FLASK_PORT, help="Port")
 
     args, extras = parser.parse_known_args()
 
     app = create_app()
 
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    app.run(host=args.host, port=args.port)
 
 if __name__ == '__main__':
     main()
