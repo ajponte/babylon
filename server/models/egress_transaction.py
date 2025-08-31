@@ -27,17 +27,14 @@ class EgressTransaction(BASE):
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
 
     @classmethod
-    def get_transaction_by_id(
-        cls,
-        id: str,
-        session: Session
-    ) -> list:
+    def get_transaction_by_id(cls, tx_id: str, session: Session):
         """
         Return any transactions by ID.
 
-        :param id: ID
+        :param tx_id: ID
         :param session: SQLAlchemy Session.
         :return: The transaction, or null
         """
-        egress_tx = session.get(cls, id).all()
+        egress_tx = session.get(cls, cls.id == tx_id).one_or_none()  # type: ignore
+        logging.debug(f"results for egress: {egress_tx}")
         return egress_tx
