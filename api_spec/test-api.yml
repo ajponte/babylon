@@ -37,7 +37,7 @@ paths:
 
   /history/transactions:
     post:
-      operationId: server.controllers.transaction.get.transaction
+      operationId: server.controllers.transaction.transaction_history
       summary: >-
         Return transaction history within specified temporal bounds.
       parameters:

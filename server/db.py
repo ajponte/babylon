@@ -45,17 +45,17 @@ class Database:
 
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
 
-    def get_session(self) -> Session:
-        """
-        Fetch an existing session, which can only be tied to a variable
-        in the Flask App's global namespace. If no such session variable
-        exists, create a new session, and cache the binding.
+def get_session(self) -> Session:
+    """
+    Fetch an existing session, which can only be tied to a variable
+    in the Flask App's global namespace. If no such session variable
+    exists, create a new session, and cache the binding.
 
-        :return: An existing SQLAlchemy session, or a newly created one.
-        """
-        session = g.get(SESSION_APP_CTX_KEY, None)
-        if not session:
-            logging.info("No session object cached. Creating a new one")
-            session = sessionmaker(bind=self._engine)
+    :return: An existing SQLAlchemy session, or a newly created one.
+    """
+    session = g.get(SESSION_APP_CTX_KEY, None)
+    if not session:
+        logging.info("No session object cached. Creating a new one")
+        session = sessionmaker(bind=self._engine)
 
-        return session
+    return session
