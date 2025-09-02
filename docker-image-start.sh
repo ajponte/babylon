@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # This script runs a Docker container from an image.
 # It now takes five arguments and reads environment variables from a .env file.
 #
