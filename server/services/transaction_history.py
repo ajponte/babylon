@@ -1,7 +1,5 @@
 from server.db import get_session
 
-
-
 class TransactionHistoryHandler:
     __slots__ = "_start", "_end", "_history"
     def __init__(self, *, start: int, end: int):

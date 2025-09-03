@@ -1,13 +1,11 @@
 import logging
-import http.client
 from http import HTTPStatus
-from pyexpat.errors import messages
 from typing import Any
 
 from server.services.transaction_history import TransactionHistoryHandler
 
 
-def transaction_history(start: int, end: int) -> tuple[dict[str, Any], int]:
+async def transaction_history(start: int, end: int) -> tuple[dict[str, Any], int]:
     if not (start < end):
         message = f'{start} >= {end}'
         return {'message': message}, HTTPStatus.BAD_REQUEST
