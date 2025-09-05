@@ -35,12 +35,18 @@ paths:
                   value:
                     echoed_value: ""
 
-  /history/transactions:
+  /history/transactions/{transactionType}:
     get:
       operationId: server.controllers.transaction.transaction_history
       summary: >-
         Return transaction history within specified temporal bounds.
       parameters:
+        - name: transactionType
+          in: path
+          required: true
+          description: Transactions type
+          schema:
+            $ref: "#/components/schemas/TransactionType"
         - name: start
           in: query
           required: true
@@ -135,6 +141,12 @@ components:
       properties:
         id:
           $ref: '#/components/schemas/TransactionId'
+
+    TransactionType:
+      type: string
+      enum:
+        - ingress
+        - egress
 
     UtcTimestamp:
       type: integer
