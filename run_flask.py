@@ -14,8 +14,10 @@ SECRETS_PATH = 'test'
 os.environ['BAO_ADDR'] = DEFAULT_BAO_ADDRESS
 os.environ['OPENBAO_SECRETS_PATH'] = SECRETS_PATH
 os.environ['VAULT_TOKEN'] = DEFAULT_BAO_VAULT_TOKEN
-os.environ['SQLALCHEMY_INIT_TABLES'] = True
-os.environ['SQLALCHEMY_DATABASE_URL'] = True
+os.environ['SQLALCHEMY_INIT_TABLES'] = "True"
+os.environ['SQLALCHEMY_DATABASE_URL'] = ''
+os.environ['LOG_LEVEL'] = 'DEBUG'
+os.environ['LOG_TYPE'] = 'stream'
 
 def main():
     """
