@@ -45,7 +45,7 @@ def mock_env():
 
     os.environ['OPENBAO_SECRETS_PATH'] = 'test'
     os.environ['SQLALCHEMY_POOL_RECYCLE'] = '3600'
-    os.environ['SQLALCHEMY_DB_ENGINE'] = 'postgresql'
+    os.environ['SQLALCHEMY_DB_ENGINE'] = 'sqlite'
     os.environ['SQLALCHEMY_DATABASE_NAME'] = 'babylon'
 
     # The `yield` statement makes this a generator fixture.
