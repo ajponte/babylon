@@ -10,6 +10,8 @@ from sqlalchemy.orm.session import Session
 DATABASE_EXTENSION_KEY = "db"
 SESSION_APP_CTX_KEY = "_session"
 
+_LOGGER = logging.getLogger()
+
 
 class Database:
     """Database Driver."""
@@ -40,8 +42,12 @@ class Database:
         :param create_tables: If true, create all tables from the schemas.
         """
         if create_tables:
+            _LOGGER.debug('Creating tables from schema.')
             self.create_tables()
+            _LOGGER.debug('Done creating tables from schema.')
+            _LOGGER.debug('Disposing existing connection pool.')
             self._engine.dispose()
+            _LOGGER.debug('Disposed connection pool.')
 
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
 
@@ -55,7 +61,9 @@ def get_session(self) -> Session:
     """
     session = g.get(SESSION_APP_CTX_KEY, None)
     if not session:
-        logging.info("No session object cached. Creating a new one")
+        _LOGGER.info("No session object cached. Creating a new one")
         session = sessionmaker(bind=self._engine)
+    else:
+        _LOGGER.info('Using existing cached session object.')
 
     return session

@@ -115,7 +115,10 @@ def _setup_logging(
     Setup logging.
     """
     # Init logs
-    logs.init_app(flask_app, default_policy=USE_DEFAULT_LOGGING_POLICY)
+    logs.init_app(
+        flask_app,
+        log_level='DEBUG', log_type='stream'
+    )
 
     # For request logging
     @flask_app.after_request

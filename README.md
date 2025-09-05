@@ -68,3 +68,9 @@ The stack can be completely brought down with
     # Adding the `-v` flag will remove attached volumes.
     docker-compose down -v
 ```
+### Update DB Connection
+Because docker-compose uses DHCP, container IP addresses could change. A quick way to fetch the IP address
+of the postgres container is to use the following command:
+```shell
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres
+```
