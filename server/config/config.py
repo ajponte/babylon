@@ -5,34 +5,15 @@ from typing import Any
 from server.config.confload import Loader, required, required_secret, optional, to_int, to_bool
 
 
-# XXX: Temporary. Should be removed in favor of just using env vars.
-def make_sqlalchemy_url(
-    engine: str = "sqlite",
-    user: str = "user",
-    passwd: str = "password",
-    host: str = "localhost",
-    port: int = 5432,
-    database: str = "babylon"
-) -> str:
-    """Return a sqlaclchemy DB url."""
-    if engine == "sqlite":
-        return f"{engine}://"
-    elif engine == 'postgresql':
-        driver = "psycopg2"
-        return f"{engine}+{driver}://{user}:{passwd}@{host}:{port}/{database}"
-    raise ValueError(f"Unknown engine: {engine}")
-
-
 CONFIG_LOADERS: list[Loader] = [
     # These are optional for now. Later decide which should be required.
     required(key="BAO_ADDR"),
     required(key="OPENBAO_SECRETS_PATH"),
+    # required(key="SQLALCHEMY_DATABASE_URL"),
+    required(key="SQLALCHEMY_DB_ENGINE"),
+    required(key="SQLALCHEMY_DATABASE_NAME"),
     optional(key="LOG_TYPE", default_val="stdout"),
     optional(key="LOG_LEVEL", default_val="DEBUG"),
-    optional(
-        key="SQLALCHEMY_DATABASE_URL",
-        default_val=make_sqlalchemy_url()
-    ),
     optional(key="SQLALCHEMY_POOL_RECYCLE", default_val="3600", converter=to_int),
     optional(key='SQLALCHEMY_INIT_TABLES', default_val="false", converter=to_bool)
 ]

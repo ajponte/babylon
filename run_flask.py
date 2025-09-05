@@ -11,11 +11,19 @@ DEFAULT_BAO_ADDRESS = 'http://127.0.0.1:8200'
 DEFAULT_BAO_VAULT_TOKEN = 'dev-only-token'
 SECRETS_PATH = 'test'
 
+SQLALCHEMY_DB_ENGINE = 'postgresql'
+SQLALCHEMY_DATABASE_NAME = 'babylon'
+SQLALCHEMY_DB_HOST = ''
+SQLALCHEMY_DB_PORT = ''
+SQLALCHEMY_DB_USER = ''
+SQLALCHEMY_DB_PASS = ''
+
 os.environ['BAO_ADDR'] = DEFAULT_BAO_ADDRESS
 os.environ['OPENBAO_SECRETS_PATH'] = SECRETS_PATH
 os.environ['VAULT_TOKEN'] = DEFAULT_BAO_VAULT_TOKEN
 os.environ['SQLALCHEMY_INIT_TABLES'] = "True"
-os.environ['SQLALCHEMY_DATABASE_URL'] = ''
+os.environ['SQLALCHEMY_DATABASE_NAME'] = SQLALCHEMY_DATABASE_NAME
+os.environ['SQLALCHEMY_DB_ENGINE'] = SQLALCHEMY_DB_ENGINE
 os.environ['LOG_LEVEL'] = 'DEBUG'
 os.environ['LOG_TYPE'] = 'stream'
 
@@ -26,12 +34,12 @@ def main():
     def _set_secrets():
         openbao = OpenBaoApiClient()
         openbao.add_secret_value(
-            path='test',
+            path=SECRETS_PATH,
             secret={
-                'DB_HOST': 'localhost',
-                'DB_PORT': '14333',
-                'DB_USERNAME': 'root',
-                'DB_PASSWORD': 'root'
+                'DB_HOST': SQLALCHEMY_DB_HOST,
+                'DB_PORT': SQLALCHEMY_DB_PORT,
+                'DB_USERNAME': SQLALCHEMY_DB_USER,
+                'DB_PASSWORD': SQLALCHEMY_DB_PASS
             }
         )
         print('Done writing mock secrets!')

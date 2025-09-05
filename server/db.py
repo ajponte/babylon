@@ -23,10 +23,17 @@ class Database:
         :param config: DB Connection configs.
         :param sqlalchemy_base: SQLAlchemy Base.
         """
-        database_url = config["SQLALCHEMY_DATABASE_URL"]
+        _database_url = _make_sqlalchemy_url(
+            engine=config['SQLALCHEMY_DB_ENGINE'],
+            host=config['DB_HOST'],
+            port=config['DB_PORT'],
+            user=config['DB_USERNAME'],
+            passwd=config['DB_PASSWORD'],
+            database=config['SQLALCHEMY_DATABASE_NAME']
+        )
         # Determines how often (in seconds) the connection pool should refresh.
         pool_recycle = config["SQLALCHEMY_POOL_RECYCLE"]
-        self._engine = create_engine(url=database_url, pool_recycle=pool_recycle)
+        self._engine = create_engine(url=_database_url, pool_recycle=pool_recycle)
         # Bind a new session to the engine.
         self._session = sessionmaker(bind=self._engine)
         self._base = sqlalchemy_base
@@ -67,3 +74,21 @@ def get_session(self) -> Session:
         _LOGGER.info('Using existing cached session object.')
 
     return session
+
+
+def _make_sqlalchemy_url(
+    *,
+    engine: str,
+    user: str,
+    passwd: str,
+    host: str,
+    port: int,
+    database: str,
+    driver: str = "psycopg2"
+) -> str:
+    """Return a sqlAlchemy DB url."""
+    if engine == "sqlite":
+        return f"{engine}://"
+    elif engine == 'postgresql':
+        return f"{engine}+{driver}://{user}:{passwd}@{host}:{port}/{database}"
+    raise ValueError(f"Unknown engine: {engine}")

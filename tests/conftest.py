@@ -42,8 +42,9 @@ def mock_env():
     # Set the required environment variables for the tests
     os.environ['BAO_ADDR'] = 'http://localhost:8200'
     os.environ['BAO_TOKEN'] = 'dev-token'
-    os.environ['DATABASE_URL'] = 'postgresql+psycopg2://user:password@localhost:5433/mydb'
+    os.environ['SQLALCHEMY_DATABASE_URL'] = 'postgresql+psycopg2://user:password@localhost:5433/mydb'
     os.environ['OPENBAO_SECRETS_PATH'] = 'test'
+    os.environ['SQLALCHEMY_POOL_RECYCLE'] = '3600'
 
     # The `yield` statement makes this a generator fixture.
     # The code before yield runs during setup, and the code after runs during teardown.
@@ -72,7 +73,8 @@ def mock_bao_client():
             'data': {
                 'data': {
                     'BAO_ADDR': 'http://localhost:8200',
-                    'BAO_TOKEN': 'dev-token'
+                    'BAO_TOKEN': 'dev-token',
+                    'DB_HOST': 'https://mock-host.com'
                 },
                 'metadata': {
                     'version': 1
