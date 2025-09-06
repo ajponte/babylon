@@ -69,6 +69,7 @@ def get_session(self) -> Session:
     session = g.get(SESSION_APP_CTX_KEY, None)
     if not session:
         _LOGGER.info("No session object cached. Creating a new one")
+        # pylint: disable=protected-access
         session = sessionmaker(bind=self._engine)
     else:
         _LOGGER.info('Using existing cached session object.')
@@ -76,6 +77,7 @@ def get_session(self) -> Session:
     return session
 
 
+# pylint: disable=too-many-arguments
 def _make_sqlalchemy_url(
     *,
     engine: str,
@@ -89,6 +91,6 @@ def _make_sqlalchemy_url(
     """Return a sqlAlchemy DB url."""
     if engine == "sqlite":
         return f"{engine}://"
-    elif engine == 'postgresql':
+    if engine == 'postgresql':
         return f"{engine}+{driver}://{user}:{passwd}@{host}:{port}/{database}"
     raise ValueError(f"Unknown engine: {engine}")

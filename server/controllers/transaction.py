@@ -1,3 +1,5 @@
+"""Transactions controller."""
+
 import logging
 from http import HTTPStatus
 from typing import Any
@@ -10,12 +12,21 @@ async def transaction_history(
     start: int,
     end: int
 ) -> tuple[dict[str, Any], int]:
-    if not (start < end):
+    """
+    Fetch transaction history between start and end.
+
+    :param transaction_type: Type of transactions (ingress/egress).
+    :param start: Start UTC epoch.
+    :param end: End UTC epoch.
+    :return: Tuple of Transaction history and status code.
+    """
+    if start >= end:
         message = f'{start} >= {end}'
         return {'message': message}, HTTPStatus.BAD_REQUEST
     try:
         logging.debug(f'Fetching transaction between {start} and {end}')
         resp = _transaction_search(
+            transaction_type,
             start,
             end
         )
@@ -30,6 +41,14 @@ def _transaction_search(
     start: int,
     end: int
 ):
+    """
+    Search for transactions.
+
+    :param transaction_type: Transaction type.
+    :param start: Start UTC.
+    :param end: End UTC.
+    :return: Any transactions within the bounds.
+    """
     handler = TransactionHistoryHandler(transaction_type=transaction_type,
                                         start=start, end=end)
     return handler.fetch_transaction_history()
