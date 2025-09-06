@@ -1,17 +1,33 @@
 import pytest
 from pytest import fixture
-import connexion
 import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
+from server.config.hashicorp import OpenBaoApiClient
 
 # The original hvac_client and open_bao_api_client fixtures are replaced
 # with a single, more explicit test function using a patch context manager.
 
+MOCK_SECRETS = {
+    'BAO_ADDR': 'http://localhost:8200',
+    'BAO_TOKEN': 'dev-token',
+    'DB_HOST': 'https://mock-host.com',
+    'DB_PORT': '5432',
+    'DB_USERNAME': 'dummy',
+    'DB_PASSWORD': 'dummy'
+}
+
+MOCK_HVAC_RESPONSE = {
+    'data': {
+        'data': MOCK_SECRETS,
+        'metadata': {
+            'version': 1
+        }
+    }
+}
 
 @fixture(autouse=True)
-def mock_hvac_client():
+def hvac_client():
     """
     This fixture patches the hvac.Client and yields a mock instance of it.
     The patch is automatically started and stopped by pytest.
@@ -72,36 +88,11 @@ def mock_env():
 
 
 @pytest.fixture
-def mock_bao_client():
+def mock_bao_client(hvac_client):
     """
     A fixture to mock the OpenBao client for tests that require a secrets manager.
     """
-    with patch('server.config.hashicorp.BaoSecretsManager') as MockBaoSecretsManager:
-        # We need to create a mock of the instance that will be returned
-        mock_instance = MagicMock()
-
-        # We need to mock the client attribute of the instance
-        mock_instance.client = MagicMock()
-        mock_instance.client.is_authenticated.return_value = True
-
-        # And set up the mock return values for the methods called
-        mock_instance.client.secrets.kv.read_secret_version.return_value = {
-            'data': {
-                'data': {
-                    'BAO_ADDR': 'http://localhost:8200',
-                    'BAO_TOKEN': 'dev-token',
-                    'DB_HOST': 'https://mock-host.com',
-                    'DB_PORT': '5432',
-                    'DB_USERNAME': 'dummy',
-                    'DB_PASSWORD': 'dummy'
-                },
-                'metadata': {
-                    'version': 1
-                }
-            }
-        }
-
-        # Set the return value of the patched class to our mock instance
-        MockBaoSecretsManager.return_value = mock_instance
-
-        yield mock_instance
+    hvac_client.return_value.is_authenticated.return_value = True
+    hvac_client.return_value.secrets.kv.read_secret_version.return_value = MOCK_HVAC_RESPONSE
+    open_bao_api_client = OpenBaoApiClient()
+    return open_bao_api_client
