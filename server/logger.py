@@ -42,8 +42,8 @@ class LogSetup:
         """
         initialize_defaults: bool = kwargs.get("default_policy", False)
         app_config: dict = app.config if not initialize_defaults else STDOUT_DEFAULTS
-        log_type = app_config.get("LOG_TYPE", None) or kwargs.get('log_type')
-        logging_level = app_config.get("LOG_LEVEL", None) or kwargs.get('log_level')
+        log_type = app_config.get("LOG_TYPE", None) or kwargs.get("log_type")
+        logging_level = app_config.get("LOG_LEVEL", None) or kwargs.get("log_level")
         if log_type != "stream":
             try:
                 log_directory = app_config["LOG_DIR"]

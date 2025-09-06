@@ -2,7 +2,14 @@
 
 from typing import Any
 
-from server.config.confload import Loader, required, required_secret, optional, to_int, to_bool
+from server.config.confload import (
+    Loader,
+    required,
+    required_secret,
+    optional,
+    to_int,
+    to_bool,
+)
 
 
 CONFIG_LOADERS: list[Loader] = [
@@ -15,7 +22,7 @@ CONFIG_LOADERS: list[Loader] = [
     optional(key="LOG_TYPE", default_val="stdout"),
     optional(key="LOG_LEVEL", default_val="DEBUG"),
     optional(key="SQLALCHEMY_POOL_RECYCLE", default_val="3600", converter=to_int),
-    optional(key='SQLALCHEMY_INIT_TABLES', default_val="false", converter=to_bool)
+    optional(key="SQLALCHEMY_INIT_TABLES", default_val="false", converter=to_bool),
 ]
 
 SECRETS_LOADERS: list[Loader] = [
