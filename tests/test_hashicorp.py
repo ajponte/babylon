@@ -9,20 +9,6 @@ MOCK_SECRETS = {
 }
 
 
-# The original hvac_client and open_bao_api_client fixtures are replaced
-# with a single, more explicit test function using a patch context manager.
-
-
-@fixture
-def mock_hvac_client():
-    """
-    This fixture patches the hvac.Client and yields a mock instance of it.
-    The patch is automatically started and stopped by pytest.
-    """
-    with patch('server.config.hashicorp.hvac.Client') as mock_client:
-        yield mock_client
-
-
 def test_open_bao_api_client_read_secrets(mock_hvac_client):
     """
     Tests reading secrets from the OpenBaoApiClient by mocking the underlying

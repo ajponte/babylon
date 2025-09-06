@@ -1,13 +1,27 @@
 import pytest
+from pytest import fixture
 import connexion
 import os
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 
+# The original hvac_client and open_bao_api_client fixtures are replaced
+# with a single, more explicit test function using a patch context manager.
+
+
+@fixture(autouse=True)
+def mock_hvac_client():
+    """
+    This fixture patches the hvac.Client and yields a mock instance of it.
+    The patch is automatically started and stopped by pytest.
+    """
+    with patch('server.config.hashicorp.hvac.Client') as mock_client:
+        yield mock_client
+
 # This is a pytest fixture. It's a special function that provides a reusable
 # piece of code (like a test client) to your test functions.
-@pytest.fixture
+@fixture
 def connexion_client(mock_bao_client):
     """
     A pytest fixture to provide a test client for the Connexion app.
@@ -30,7 +44,7 @@ def connexion_client(mock_bao_client):
         yield client
 
 
-@pytest.fixture(scope="function", autouse=True)
+@fixture(scope="function", autouse=True)
 def mock_env():
     """
     A pytest fixture to set and unset environment variables for testing.
