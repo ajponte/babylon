@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Define the image name and tag. You can change these to whatever you prefer.
 IMAGE_NAME="babylon-app"
 IMAGE_TAG="latest"

@@ -1,12 +1,16 @@
 """Database driver."""
 
+import logging
 from typing import Any
-from flask import Flask
+from flask import Flask, g
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import create_engine
+from sqlalchemy.orm.session import Session
 
 DATABASE_EXTENSION_KEY = "db"
 SESSION_APP_CTX_KEY = "_session"
+
+_LOGGER = logging.getLogger()
 
 
 class Database:
@@ -19,10 +23,17 @@ class Database:
         :param config: DB Connection configs.
         :param sqlalchemy_base: SQLAlchemy Base.
         """
-        database_url = config["SQLALCHEMY_DATABASE_URL"]
+        _database_url = _make_sqlalchemy_url(
+            engine=config["SQLALCHEMY_DB_ENGINE"],
+            host=config["DB_HOST"],
+            port=config["DB_PORT"],
+            user=config["DB_USERNAME"],
+            passwd=config["DB_PASSWORD"],
+            database=config["SQLALCHEMY_DATABASE_NAME"],
+        )
         # Determines how often (in seconds) the connection pool should refresh.
         pool_recycle = config["SQLALCHEMY_POOL_RECYCLE"]
-        self._engine = create_engine(url=database_url, pool_recycle=pool_recycle)
+        self._engine = create_engine(url=_database_url, pool_recycle=pool_recycle)
         # Bind a new session to the engine.
         self._session = sessionmaker(bind=self._engine)
         self._base = sqlalchemy_base
@@ -38,7 +49,49 @@ class Database:
         :param create_tables: If true, create all tables from the schemas.
         """
         if create_tables:
+            _LOGGER.debug("Creating tables from schema.")
             self.create_tables()
+            _LOGGER.debug("Done creating tables from schema.")
+            _LOGGER.debug("Disposing existing connection pool.")
             self._engine.dispose()
+            _LOGGER.debug("Disposed connection pool.")
 
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
+
+
+def get_session(self) -> Session:
+    """
+    Fetch an existing session, which can only be tied to a variable
+    in the Flask App's global namespace. If no such session variable
+    exists, create a new session, and cache the binding.
+
+    :return: An existing SQLAlchemy session, or a newly created one.
+    """
+    session = g.get(SESSION_APP_CTX_KEY, None)
+    if not session:
+        _LOGGER.info("No session object cached. Creating a new one")
+        # pylint: disable=protected-access
+        session = sessionmaker(bind=self._engine)
+    else:
+        _LOGGER.info("Using existing cached session object.")
+
+    return session
+
+
+# pylint: disable=too-many-arguments
+def _make_sqlalchemy_url(
+    *,
+    engine: str,
+    user: str,
+    passwd: str,
+    host: str,
+    port: int,
+    database: str,
+    driver: str = "psycopg2",
+) -> str:
+    """Return a sqlAlchemy DB url."""
+    if engine == "sqlite":
+        return f"{engine}://"
+    if engine == "postgresql":
+        return f"{engine}+{driver}://{user}:{passwd}@{host}:{port}/{database}"
+    raise ValueError(f"Unknown engine: {engine}")

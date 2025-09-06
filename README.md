@@ -29,13 +29,13 @@ or
 ```
 Since the build is dependent on `poetry`, the commands are equivalent.
 
-## Unit Tests
+### Unit Tests
 This project uses `pytest`. You can invoke tests in a poetry environment, via
 ```shell
  poetry run pytest tests
 ```
 
-## Formatting
+### Formatting
 This project uses `black` to enforce PEP-8 formatting rules.
 You can format any file with
 ```shell
@@ -50,5 +50,27 @@ With `tox`, you can also check formatting any time with
 Note that since tox is intended to be invoked as part of a CI
 pipeline, we will never rewrite files.
 
-## Type Checking
+### Type Checking
 This project (somewhat) enforces static typing through `mypy`.
+
+## Local Development
+Services are mocked in `docker-compose.yml`.
+A new stack can be brought up with
+
+``` shell
+    docker-compose up -d
+```
+
+Note that there's a `healthcheck` step in setting up the postgres container.
+
+The stack can be completely brought down with
+```shell
+    # Adding the `-v` flag will remove attached volumes.
+    docker-compose down -v
+```
+### Update DB Connection
+Because docker-compose uses DHCP, container IP addresses could change. A quick way to fetch the IP address
+of the postgres container is to use the following command:
+```shell
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' postgres
+```

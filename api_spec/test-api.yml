@@ -1,0 +1,154 @@
+openapi: 3.0.0
+info:
+  title: Echo API
+  version: 1.0.0
+  description: A simple API to echo a value back to the user.
+
+servers:
+  - url: /api
+
+paths:
+  /echo:
+    get:
+      operationId: server.controllers.echo.do_echo
+      summary: Echo a value back
+      description: Returns the value provided in the query parameter, or an empty string if omitted.
+      parameters:
+        - name: value
+          in: query
+          required: false
+          description: The value to be echoed back.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A successful response returning the echoed value.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EchoResponse'
+              examples:
+                success:
+                  value:
+                    echoed_value: "hello world"
+                empty_string:
+                  value:
+                    echoed_value: ""
+
+  /history/transactions/{transactionType}:
+    get:
+      operationId: server.controllers.transaction.transaction_history
+      summary: >-
+        Return transaction history within specified temporal bounds.
+      parameters:
+        - name: transactionType
+          in: path
+          required: true
+          description: Transactions type
+          schema:
+            $ref: "#/components/schemas/TransactionType"
+        - name: start
+          in: query
+          required: true
+          description: UTC start time for transaction history
+          schema:
+            $ref: '#/components/schemas/UtcTimestamp'
+
+        - name: end
+          in: query
+          required: true
+          description: UTC end time for the transaction history
+          schema:
+            $ref: '#/components/schemas/UtcTimestamp'
+
+      responses:
+          '200':
+            description: Success. Document follows.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/HttpTransactionHistorySearchResponse'
+          '400':
+            description: Bad Request.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/HttpBadRequestResponse'
+          '404':
+            description: Not Found.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/HttpNotFoundResponse'
+          '500':
+            description: Internal Server Error.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/HttpNotFoundResponse'
+
+
+
+components:
+  schemas:
+    DebugMessageResponse:
+      type: string
+      description: A message attached to an HTTP response for debugging purposes.
+
+    TransactionId:
+      type: string
+      description: A unique identifier for a transaction.
+      example: "a400eb84-ee4d-4362-b2ac-731ef7a232f3"
+
+    EchoResponse:
+      type: object
+      properties:
+        echoed_value:
+          type: string
+          description: The value that was echoed back.
+
+    HttpBadRequestResponse:
+      type:
+        object
+      properties:
+        message:
+          $ref: '#/components/schemas/DebugMessageResponse'
+
+    HttpInternalServerErrorResponse:
+      type:
+        object
+      properties:
+        message:
+          $ref: '#/components/schemas/DebugMessageResponse'
+
+    HttpNotFoundResponse:
+      type:
+        object
+      properties:
+        message:
+          $ref: '#/components/schemas/DebugMessageResponse'
+
+    HttpTransactionHistorySearchResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryTransaction'
+
+    HistoryTransaction:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/TransactionId'
+
+    TransactionType:
+      type: string
+      enum:
+        - ingress
+        - egress
+
+    UtcTimestamp:
+      type: integer
+      description: A UTC timestamp.
+      example: 1756773077
