@@ -26,8 +26,8 @@ class TransactionDto:
     date_posted: date
     source: str
     description: str
-    slip_number: str | None
     amount: float
+    slip_number: str | None = None
 
 
 class TransactionHistoryHandler:
