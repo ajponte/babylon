@@ -2,6 +2,7 @@
 
 import logging
 from http import HTTPStatus
+from dataclasses import asdict
 from typing import Any
 
 from server.services.transaction_history import TransactionHistoryHandler
@@ -43,4 +44,5 @@ def _transaction_search(transaction_type: str, start: int, end: int):
     handler = TransactionHistoryHandler(
         transaction_type=transaction_type, start=start, end=end
     )
-    return handler.fetch_transaction_history()
+    history = handler.fetch_transaction_history()
+    return [asdict(h) for h in history]

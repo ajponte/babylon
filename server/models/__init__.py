@@ -18,7 +18,9 @@ class EgressTransactionSource(Enum):
 class IngressTransactionSource(Enum):
     """The source of a transaction."""
 
-    PAYROLL = "PAYROLL"
+    SALARY = "SALARY"
+    INVESTMENT = "INVESTMENT"
+    REFUND = "REFUND"
 
 
 def create_random_uuid_hex() -> str:

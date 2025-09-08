@@ -8,11 +8,15 @@ from sqlalchemy.orm import Mapped, mapped_column, Session
 from sqlalchemy.types import Enum, Text, String, Integer
 from server.models import BASE, create_random_uuid_hex, IngressTransactionSource
 
+_LOGGER = logging.getLogger()
+
 
 class IngressTransaction(BASE):
     """IngressTransaction ORM mapper."""
 
-    __tablename__ = "inress_transaction"
+    __tablename__ = "ingress_transaction"
+    # workaround for https://docs.sqlalchemy.org/en/20/errors.html#error-zlpr
+    __allow_unmapped__ = True
     id: Mapped[str] = mapped_column(primary_key=True, default=create_random_uuid_hex)
     date_created: Mapped[datetime] = mapped_column(default=datetime.now())
     date_updated: Mapped[datetime] = mapped_column(default=datetime.now())
@@ -25,6 +29,32 @@ class IngressTransaction(BASE):
     slip_number: Optional[Mapped[str]] = mapped_column(Text)
 
     amount: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # For testing
+    @classmethod
+    def get_transactions(cls, session: Session):
+        return session.query(cls).all()
+
+    @classmethod
+    def get_transactions_posted_within_bounds(cls, start: datetime, end: datetime, session: Session):
+        """
+        Return any transactions posted between START and END.
+
+        :param start: Start dt.
+        :param end: End dt.
+        :param session: SQLAlchemy session.
+        :return: List of transactions.
+        """
+        try:
+            results = session.get(
+                cls,
+                ((cls.date_posted >= start) and (cls.date_posted <= end))
+            ).all()
+            return results
+        except Exception as e:
+            _LOGGER.info(f'Error while fetching transactions between {start}, {end}')
+            raise e
+
 
     @classmethod
     def get_transaction_by_id(cls, tx_id: str, session: Session):
