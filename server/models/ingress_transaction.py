@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 from datetime import datetime, date
 
+from sqlalchemy import and_
 from sqlalchemy.orm import Mapped, mapped_column, Session
 from sqlalchemy.types import Enum, Text, String, Integer
 from server.models import BASE, create_random_uuid_hex, IngressTransactionSource
@@ -43,7 +44,7 @@ class IngressTransaction(BASE):
 
     @classmethod
     def get_transactions_posted_within_bounds(
-        cls, start: datetime, end: datetime, session: Session
+        cls, start: date, end: date, session: Session
     ):
         """
         Return any transactions posted between START and END.
@@ -54,10 +55,10 @@ class IngressTransaction(BASE):
         :return: List of transactions.
         """
         try:
-            results = session.get(
-                cls, ((cls.date_posted >= start) and (cls.date_posted <= end))
-            ).all()  # type: ignore
-            return results
+            results = session.query(cls).filter(
+                and_(cls.date_posted >= start, cls.date_posted <= end)
+            )
+            return results.all()
         except Exception as e:
             _LOGGER.info(f"Error while fetching transactions between {start}, {end}")
             raise e
