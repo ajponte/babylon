@@ -51,22 +51,22 @@ class TransactionHistoryHandler:
         """Return any transaction history."""
         tx_dao = select_transaction_dao(self._transaction_type)
         results = tx_dao.get_transactions_posted_within_bounds(
-            session=get_session(),
-            start=self._start,
-            end=self._end
+            session=get_session(), start=self._start, end=self._end
         )
         return _from_transaction_dao(
-            transactions=results,
-            transaction_type=self._transaction_type
+            transactions=results, transaction_type=self._transaction_type
         )
 
-def _from_transaction_dao(transactions: list, transaction_type: str) -> list[TransactionDto]:
+
+def _from_transaction_dao(
+    transactions: list, transaction_type: str
+) -> list[TransactionDto]:
     """Return a list of transaction DAO."""
     return [
-        _to_transaction_dto(
-            transaction=tx, transaction_type=transaction_type
-        ) for tx in transactions
+        _to_transaction_dto(transaction=tx, transaction_type=transaction_type)
+        for tx in transactions
     ]
+
 
 def _to_transaction_dto(transaction, transaction_type: str) -> TransactionDto:
     """Convert a sqlalchemy DAO to the appropriate DTO."""
@@ -80,10 +80,11 @@ def _to_transaction_dto(transaction, transaction_type: str) -> TransactionDto:
         amount=transaction.amount,
     )
 
+
 def select_transaction_dao(transaction_type: str):
     """Return the appropriate DAO."""
-    if transaction_type == 'ingress':
+    if transaction_type == "ingress":
         return IngressTransaction
-    elif transaction_type == 'egress':
+    if transaction_type == "egress":
         return EgressTransaction
-    raise ValueError(f'{transaction_type} is not valid')
+    raise ValueError(f"{transaction_type} is not valid")

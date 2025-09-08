@@ -11,6 +11,7 @@ BASE = declarative_base()
 
 class EgressTransactionSource(Enum):
     """The source of a transaction."""
+
     ATM_WITHDRAWAL = "ATM_WITHDRAWAL"
     ONLINE_TRANSFER = "ONLINE_TRANSFER"
     CARD_PAYMENT = "CARD_PAYMENT"
