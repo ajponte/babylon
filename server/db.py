@@ -2,7 +2,7 @@
 
 import logging
 from typing import Any
-from flask import Flask, g
+from flask import Flask, g, current_app
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm.session import Session
@@ -34,8 +34,6 @@ class Database:
         # Determines how often (in seconds) the connection pool should refresh.
         pool_recycle = config["SQLALCHEMY_POOL_RECYCLE"]
         self._engine = create_engine(url=_database_url, pool_recycle=pool_recycle)
-        # Bind a new session to the engine.
-        self._session = sessionmaker(bind=self._engine)
         self._base = sqlalchemy_base
 
     def create_tables(self):
@@ -46,8 +44,12 @@ class Database:
         """
         Attach a Flask app instance to this database driver.
 
+        :param flask_app: Created flask app.
         :param create_tables: If true, create all tables from the schemas.
         """
+        # Bind a new session to the engine.
+        session = sessionmaker(bind=self._engine)
+        flask_app.extensions[SESSION_APP_CTX_KEY] = session()
         if create_tables:
             _LOGGER.debug("Creating tables from schema.")
             self.create_tables()
@@ -55,11 +57,10 @@ class Database:
             _LOGGER.debug("Disposing existing connection pool.")
             self._engine.dispose()
             _LOGGER.debug("Disposed connection pool.")
-
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
 
 
-def get_session(self) -> Session:
+def get_session() -> Session:
     """
     Fetch an existing session, which can only be tied to a variable
     in the Flask App's global namespace. If no such session variable
@@ -71,7 +72,9 @@ def get_session(self) -> Session:
     if not session:
         _LOGGER.info("No session object cached. Creating a new one")
         # pylint: disable=protected-access
-        session = sessionmaker(bind=self._engine)
+        db_state = current_app.extensions[DATABASE_EXTENSION_KEY]
+        session_factory = sessionmaker(bind=db_state._engine)
+        session = session_factory()
     else:
         _LOGGER.info("Using existing cached session object.")
 

@@ -12,13 +12,17 @@ BASE = declarative_base()
 class EgressTransactionSource(Enum):
     """The source of a transaction."""
 
-    CHASE = "CHASE"
+    ATM_WITHDRAWAL = "ATM_WITHDRAWAL"
+    ONLINE_TRANSFER = "ONLINE_TRANSFER"
+    CARD_PAYMENT = "CARD_PAYMENT"
 
 
 class IngressTransactionSource(Enum):
     """The source of a transaction."""
 
-    PAYROLL = "PAYROLL"
+    SALARY = "SALARY"
+    INVESTMENT = "INVESTMENT"
+    REFUND = "REFUND"
 
 
 def create_random_uuid_hex() -> str:
