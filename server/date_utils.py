@@ -1,5 +1,8 @@
+"""Date conversion helpers."""
+
 import datetime
 from datetime import timezone
+
 
 def date_to_epoch(date_obj: datetime.date) -> int:
     """
@@ -11,10 +14,13 @@ def date_to_epoch(date_obj: datetime.date) -> int:
     """
     # Convert the date object to a datetime object at midnight UTC
     # We use combine to set the time to 00:00:00 and then attach the UTC timezone.
-    dt_utc = datetime.datetime.combine(date_obj, datetime.time(0, 0, 0), tzinfo=timezone.utc)
+    dt_utc = datetime.datetime.combine(
+        date_obj, datetime.time(0, 0, 0), tzinfo=timezone.utc
+    )
 
     # Return the epoch timestamp as an integer
     return int(dt_utc.timestamp())
+
 
 def epoch_to_date_utc(timestamp: int) -> datetime.date:
     """

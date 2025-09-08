@@ -33,10 +33,18 @@ class IngressTransaction(BASE):
     # For testing
     @classmethod
     def get_transactions(cls, session: Session):
+        """
+        For testing only.
+
+        :param session: SQLAlchemy session.
+        :return: All transactions.
+        """
         return session.query(cls).all()
 
     @classmethod
-    def get_transactions_posted_within_bounds(cls, start: datetime, end: datetime, session: Session):
+    def get_transactions_posted_within_bounds(
+        cls, start: datetime, end: datetime, session: Session
+    ):
         """
         Return any transactions posted between START and END.
 
@@ -47,14 +55,12 @@ class IngressTransaction(BASE):
         """
         try:
             results = session.get(
-                cls,
-                ((cls.date_posted >= start) and (cls.date_posted <= end))
-            ).all()
+                cls, ((cls.date_posted >= start) and (cls.date_posted <= end))
+            ).all()  # type: ignore
             return results
         except Exception as e:
-            _LOGGER.info(f'Error while fetching transactions between {start}, {end}')
+            _LOGGER.info(f"Error while fetching transactions between {start}, {end}")
             raise e
-
 
     @classmethod
     def get_transaction_by_id(cls, tx_id: str, session: Session):

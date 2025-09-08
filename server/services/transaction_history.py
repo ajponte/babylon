@@ -7,12 +7,18 @@ from datetime import date
 from server.db import get_session
 from server.models.ingress_transaction import IngressTransaction
 
+
 class TransactionType(StrEnum):
-    INGRESS = 'ingress'
-    EGRESS = 'egress'
+    """Transaction type enum."""
+
+    INGRESS = "ingress"
+    EGRESS = "egress"
+
 
 @dataclass(frozen=True)
 class TransactionDto:
+    """Transaction DTO to convert from data objects to return to API."""
+
     id: str
     transaction_type: str
     date_posted: date
@@ -21,10 +27,12 @@ class TransactionDto:
     slip_number: str | None
     amount: float
 
+
 class TransactionHistoryHandler:
     """
     Service object for fetching transaction history.
     """
+
     def __init__(self, *, transaction_type: str, start: int, end: int):
         """
         Constructor.
@@ -40,7 +48,7 @@ class TransactionHistoryHandler:
     def fetch_transaction_history(self) -> list[TransactionDto]:
         """Return any transaction history."""
         history: list[TransactionDto] = []
-        if self._transaction_type == 'ingress':
+        if self._transaction_type == "ingress":
             results = IngressTransaction.get_transactions(session=get_session())
             for result in results:
                 history.append(
@@ -51,7 +59,7 @@ class TransactionHistoryHandler:
                         source=result.source.value,
                         slip_number=result.slip_number,
                         description=result.description,
-                        amount=result.amount
+                        amount=result.amount,
                     )
                 )
 
