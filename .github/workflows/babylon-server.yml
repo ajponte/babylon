@@ -16,21 +16,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Download API spec artifact with curl
+    - name: Download API spec artifact
       run: |
-        curl -L -o "$ARTIFACT_NAME.zip" \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.babylon-api-pat }}" \
-          "https://github.com/ajponte/babylon_api_spec/actions/runs/$RUN_ID/artifacts/3988763991"
-
-        unzip -o -j "$ARTIFACT_NAME.zip" -d ./api-specs
-        
-        rm "$ARTIFACT_NAME.zip"
-
-      env:
-        REPO: ajponte/babylon_api_spec
-        RUN_ID: 17652643510
-        ARTIFACT_NAME: api-spec-17652643510
+        chmod +x ./download-artifact.sh
+        ./download-artifact.sh ajponte/babylon_api_spec 17652643510 api-spec-17652643510 "${{ secrets.babylon-api-pat }}"
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
