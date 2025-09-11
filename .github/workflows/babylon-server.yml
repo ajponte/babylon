@@ -23,7 +23,7 @@ jobs:
         path: ./api-specs
         repository: ajponte/babylon_api_spec
         run-id: 17652643510
-        github-token: ${{ secrets.babylon-api }}
+        github-token: ${{ secrets.babylon-api-pat }}
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
