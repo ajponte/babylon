@@ -23,8 +23,8 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.babylon-api-pat }}" \
           "https://github.com/ajponte/babylon_api_spec/actions/runs/17652643510/artifacts/3988763991"
 
-        # Unzip the downloaded artifact
-        unzip -o artifact.zip -d ./api-specs
+        # Unzip the downloaded artifact, and get rid of the directory structure
+        unzip -oj artifact.zip -d ./api-specs
         
         # Clean up the zip file
         rm artifact.zip
