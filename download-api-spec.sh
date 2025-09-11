@@ -15,7 +15,7 @@ ARTIFACT_NAME=$3
 PAT_TOKEN=$4
 
 # Define the download directory
-DOWNLOAD_DIR="./api-specs"
+DOWNLOAD_DIR="./api-spec"
 mkdir -p "$DOWNLOAD_DIR"
 
 echo "Downloading artifact '$ARTIFACT_NAME' from $REPO run $RUN_ID"
