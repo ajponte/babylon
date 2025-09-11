@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Download API spec artifact with gh cli
       run: |
-        gh run download $RUN_ID --repo $REPO --dir ./api-specs --name $ARTIFACT_NAME
+        gh run download $RUN_ID --repo $REPO --dir ./api-specs --name "$ARTIFACT_NAME"
       env:
         GH_TOKEN: ${{ secrets.babylon-api-pat }}
         REPO: ajponte/babylon_api_spec
