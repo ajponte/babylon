@@ -19,7 +19,7 @@ jobs:
     - name: Download API spec artifact
       run: |
         chmod +x ./download-api-spec.sh
-        ./download-artifact.sh ajponte/babylon_api_spec 17652643510 api-spec-17652643510 "${{ secrets.babylon-api-pat }}"
+        ./download-api-spec.sh ajponte/babylon_api_spec 17652643510 api-spec-17652643510 "${{ secrets.babylon-api-pat }}"
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
