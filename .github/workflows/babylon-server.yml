@@ -18,16 +18,19 @@ jobs:
     - uses: actions/checkout@v4
     - name: Download API spec artifact with curl
       run: |
-        curl -L -o artifact.zip \
+        curl -L -o "$ARTIFACT_NAME.zip" \
           -H "Accept: application/vnd.github+json" \
           -H "Authorization: Bearer ${{ secrets.babylon-api-pat }}" \
-          "https://github.com/ajponte/babylon_api_spec/actions/runs/17652643510/artifacts/3988763991"
+          "https://github.com/ajponte/babylon_api_spec/actions/runs/$RUN_ID/artifacts/3988763991"
 
-        # Unzip the downloaded artifact, and get rid of the directory structure
-        unzip -oj artifact.zip -d ./api-specs
+        unzip -o -j "$ARTIFACT_NAME.zip" -d ./api-specs
         
-        # Clean up the zip file
-        rm artifact.zip
+        rm "$ARTIFACT_NAME.zip"
+
+      env:
+        REPO: ajponte/babylon_api_spec
+        RUN_ID: 17652643510
+        ARTIFACT_NAME: api-spec-17652643510
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
