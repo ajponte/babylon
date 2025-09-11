@@ -21,12 +21,9 @@ jobs:
       with:
         name: api-spec-17652643510
         path: ./api-specs
-        # The repository where the artifact was uploaded
         repository: ajponte/babylon_api_spec
-        # The run ID of the workflow that uploaded the artifact
         run-id: 17652643510
-        # A Personal Access Token (PAT) with 'repo' scope, stored as a secret in this repository
-        github-token: ${{ secrets.PAT_TOKEN }}
+        github-token: ${{ secrets.babylon-api }}
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
