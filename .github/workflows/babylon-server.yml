@@ -16,11 +16,33 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Download API spec artifact with gh cli
+    - name: Download API spec artifact with curl
       run: |
-        gh run download $RUN_ID --repo $REPO --dir ./api-specs --name "$ARTIFACT_NAME"
+        # Find the artifact ID
+        ARTIFACT_ID=$(curl -s -L \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.babylon-api-pat }}" \
+          "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" | jq -r '.artifacts[] | select(.name == "$ARTIFACT_NAME") | .id')
+
+        # Check if the artifact ID was found
+        if [ -z "$ARTIFACT_ID" ]; then
+          echo "Error: Artifact not found."
+          exit 1
+        fi
+
+        # Download the artifact
+        curl -L -o artifact.zip \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: Bearer ${{ secrets.babylon-api-pat }}" \
+          "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+
+        # Unzip the downloaded artifact
+        unzip -o artifact.zip -d ./api-specs
+        
+        # Clean up the zip file
+        rm artifact.zip
+
       env:
-        GH_TOKEN: ${{ secrets.babylon-api-pat }}
         REPO: ajponte/babylon_api_spec
         RUN_ID: 17652643510
         ARTIFACT_NAME: api-spec-17652643510
