@@ -16,14 +16,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Download API spec artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: api-spec-17652643510
-        path: ./api-specs
-        repository: ajponte/babylon_api_spec
-        run-id: 17652643510
-        github-token: ${{ secrets.babylon-api-pat }}
+    - name: Download API spec artifact with gh cli
+      run: |
+        gh run download ${{ env.RUN_ID }} --repo ${{ env.REPO }} --dir ./api-specs --name ${{ env.ARTIFACT_NAME }}
+      env:
+        GH_TOKEN: ${{ secrets.babylon-api-pat }}
+        REPO: ajponte/babylon_api_spec
+        RUN_ID: 17652643510
+        ARTIFACT_NAME: api-spec-17652643510
     - name: Set up Python 3.13
       uses: actions/setup-python@v3
       with:
