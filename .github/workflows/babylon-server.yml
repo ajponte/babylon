@@ -41,7 +41,6 @@ jobs:
         
         # Clean up the zip file
         rm artifact.zip
-
       env:
         REPO: ajponte/babylon_api_spec
         RUN_ID: 17652643510
