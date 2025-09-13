@@ -209,9 +209,7 @@ def get_api_spec_path(filename: str) -> Path:
     base_dir = Path(__file__).parent.parent
 
     # Construct the full path to the API spec file
-    api_spec_path = (
-        base_dir / "api_spec" / filename
-    )
+    api_spec_path = base_dir / "api_spec" / filename
 
     # Return the Path object
     return api_spec_path
