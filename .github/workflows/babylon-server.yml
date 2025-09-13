@@ -26,8 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
     - name: Download API spec artifact
-      run: |
-        tox -e download-spec -- --pat-token "${BABYLON_API_GITHUB_PAT_TOKEN:?Missing secret}"
+      run: tox -e download-spec
       env:
         BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.babylon-api-pat }}
 
