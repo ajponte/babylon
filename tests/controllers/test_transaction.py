@@ -7,7 +7,7 @@ from server.services.transaction_history import TransactionDto
 
 
 BASE_URI = '/api/history/transactions/'
-JSON_HEADER = 'application/json'
+HTTP_HEADER_CONTENT_TYPE = 'application/json'
 
 
 MOCK_BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
@@ -52,7 +52,7 @@ def test_get_egress_transaction(
         'start': mock_start,
         'end': mock_end
     }
-    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}"}
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
     resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
 
@@ -79,6 +79,6 @@ def test_get_ingress_transaction(
         'start': mock_start,
         'end': mock_end
     }
-    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}"}
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
     resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
