@@ -59,6 +59,8 @@ def create_app() -> FlaskApp:
     _setup_http_error_handling(flask_app)
     return app
 
+
+# pylint: disable=unused-argument
 def decode_token(token) -> dict:
     """
     Decode token method for bearer auth scheme.
@@ -67,7 +69,9 @@ def decode_token(token) -> dict:
     :param token: Bearer token.
     :return: Dict containing possible user info.
     """
+    # todo
     return {}
+
 
 def _setup_http_error_handling(flask_app):
     _handle_error_unknown(flask_app)
@@ -205,7 +209,9 @@ def get_api_spec_path(filename: str) -> Path:
     base_dir = Path(__file__).parent.parent
 
     # Construct the full path to the API spec file
-    api_spec_path = base_dir / "api_spec" / "schema" / "src" / "main" / "swagger" / filename
+    api_spec_path = (
+        base_dir / "api_spec" / "schema" / "src" / "main" / "swagger" / filename
+    )
 
     # Return the Path object
     return api_spec_path
