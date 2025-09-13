@@ -15,10 +15,13 @@ _ARGS_PARSER.add_argument('--artifact-name')
 _ARGS_PARSER.add_argument('--repo')
 _ARGS_PARSER.add_argument('--pat-token')
 
-def download_artifact(repo: str, run_id: str, artifact_name: str, pat_token: str):
+def download_artifact(repo: str, run_id: str, artifact_name: str, pat_token: str | None):
     """
     Downloads an artifact from a GitHub Actions workflow run using the GitHub REST API.
     """
+    if not pat_token:
+        pat_token = os.environ['BABYLON_API_ARTIFACT_NAME']
+
     if not all([repo, run_id, artifact_name, pat_token]):
         print("Error: Missing input.")
         print("Please set REPO, RUN_ID, ARTIFACT_NAME, and PAT_TOKEN.")
