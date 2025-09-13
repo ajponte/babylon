@@ -25,10 +25,15 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install tox
+
+#    - name: Download API spec artifact
+#      run: |
+#        chmod +x ./download-api-spec.sh
+#        ./download-api-spec.sh ajponte/babylon_api_spec 17652643510 api-spec-17652643510 "${{ secrets.BABYLON_API_PAT }}"
     - name: Download API spec artifact
       run: tox -e download-spec
       env:
-        BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.babylon-api-pat }}
+        BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.BABYLON_API_PAT }}
 
     - name: Run checks with tox
       run: |
