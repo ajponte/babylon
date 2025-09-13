@@ -1,4 +1,4 @@
-[![babylon-server](https://github.com/ajponte/babylon/actions/workflows/python-app.yml/badge.svg)](https://github.com/ajponte/babylon/actions/workflows/python-app.yml)
+[![babylon-server](https://github.com/ajponte/babylon/actions/workflows/python-app.yml/badge.svg)](https://github.com/ajponte/babylon/actions/workflows/babylon-server.yml)
 
 # babylon
 Personal finance aggregation &amp; analysis
