@@ -25,7 +25,7 @@ from server.health import health
 
 # todo: Temporary fix
 USE_DEFAULT_LOGGING_POLICY = True
-DEFAULT_SWAGGER_API_SOURCE = "test-api.yml"
+DEFAULT_SWAGGER_API_SOURCE = "babylon-api-spec.yml"
 
 
 def create_app() -> FlaskApp:
@@ -58,6 +58,19 @@ def create_app() -> FlaskApp:
     _setup_health_route(flask_app)
     _setup_http_error_handling(flask_app)
     return app
+
+
+# pylint: disable=unused-argument
+def decode_token(token) -> dict:
+    """
+    Decode token method for bearer auth scheme.
+    This is the function registered with the spec's `securitySchemes`.
+
+    :param token: Bearer token.
+    :return: Dict containing possible user info.
+    """
+    # todo
+    return {}
 
 
 def _setup_http_error_handling(flask_app):

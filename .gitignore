@@ -209,3 +209,5 @@ __marimo__/
 # Jet Brains
 .idea/*
 
+# Generated API spec.
+api_spec/schema/*

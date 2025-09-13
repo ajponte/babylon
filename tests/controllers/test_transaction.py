@@ -5,7 +5,13 @@ from unittest.mock import patch
 
 from server.services.transaction_history import TransactionDto
 
+
 BASE_URI = '/api/history/transactions/'
+HTTP_HEADER_CONTENT_TYPE = 'application/json'
+
+
+MOCK_BEARER_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+
 
 TRANSACTION_TYPE_EGRESS = 'egress'
 TRANSACTION_TYPE_INGRESS = 'ingress'
@@ -46,7 +52,8 @@ def test_get_egress_transaction(
         'start': mock_start,
         'end': mock_end
     }
-    resp = app_client.get(uri, params=query_params)
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
 
 @patch('server.controllers.transaction.TransactionHistoryHandler')
@@ -72,5 +79,6 @@ def test_get_ingress_transaction(
         'start': mock_start,
         'end': mock_end
     }
-    resp = app_client.get(uri, params=query_params)
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
