@@ -25,7 +25,7 @@ from server.health import health
 
 # todo: Temporary fix
 USE_DEFAULT_LOGGING_POLICY = True
-DEFAULT_SWAGGER_API_SOURCE = "_api.yml"
+DEFAULT_SWAGGER_API_SOURCE = "babylon-api-spec.yml"
 
 
 def create_app() -> FlaskApp:
@@ -210,7 +210,7 @@ def get_api_spec_path(filename: str) -> Path:
 
     # Construct the full path to the API spec file
     api_spec_path = (
-        base_dir / "api_spec" / "schema" / "src" / "main" / "swagger" / filename
+        base_dir / "api_spec" / filename
     )
 
     # Return the Path object
