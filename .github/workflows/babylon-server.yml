@@ -27,7 +27,7 @@ jobs:
         pip install tox
     - name: Download API spec artifact
       run: |
-        tox -e download-spec -- --pat-token $BABYLON_API_GITHUB_PAT_TOKEN
+        tox -e download-spec
       env:
         BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.babylon-api-pat }}
     - name: Run checks with tox
