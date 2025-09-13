@@ -59,6 +59,15 @@ def create_app() -> FlaskApp:
     _setup_http_error_handling(flask_app)
     return app
 
+def decode_token(token) -> dict:
+    """
+    Decode token method for bearer auth scheme.
+    This is the function registered with the spec's `securitySchemes`.
+
+    :param token: Bearer token.
+    :return: Dict containing possible user info.
+    """
+    return {}
 
 def _setup_http_error_handling(flask_app):
     _handle_error_unknown(flask_app)
