@@ -1,3 +1,4 @@
+# Simplified and corrected GitHub Actions workflow
 name: babylon-server
 
 on:
@@ -29,17 +30,6 @@ jobs:
         tox -e download-spec
       env:
         BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.babylon-api-pat }}
-    - name: Install dependencies
+    - name: Run checks with tox
       run: |
-        pip install poetry 
-        # Install poetry dependencies only.
-        poetry install
-    - name: Pylint checks
-      run: |
-        tox -e lint
-    - name: Formatting checks
-      run: |
-        tox -e format
-    - name: Pytest
-      run: |
-        tox -e pytest
+        tox -e lint,format,pytest
