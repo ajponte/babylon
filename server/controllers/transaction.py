@@ -47,5 +47,14 @@ def _transaction_search(transaction_type: str, start: int, end: int):
     history = handler.fetch_transaction_history()
     return [asdict(h) for h in history]
 
+
+# pylint: disable=unused-argument
 async def transaction_get_by_id(transaction_id: str) -> tuple[dict, int]:
+    """
+    Fetch a transaction by its ID.
+
+    :param transaction_id: Transaction ID.
+    :return: Transaction entity.
+    """
+    # todo
     return {}, HTTPStatus.OK
