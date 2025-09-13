@@ -5,22 +5,36 @@ import requests
 import zipfile
 import io
 
-_ARGS_PARSER = argparse.ArgumentParser(
-                    prog='ProgramName',
-                    description='What the program does',
-                    epilog='Text at the bottom of help')
 
-_ARGS_PARSER.add_argument('--run-id')
-_ARGS_PARSER.add_argument('--artifact-name')
-_ARGS_PARSER.add_argument('--repo')
-_ARGS_PARSER.add_argument('--pat-token')
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--pat-token",
+        default=os.environ.get("BABYLON_API_GITHUB_PAT_TOKEN"),
+        help="GitHub PAT token (or set BABYLON_API_GITHUB_PAT_TOKEN env var)",
+    )
+    parser.add_argument('--run-id')
+    parser.add_argument('--artifact-name')
+    parser.add_argument('--repo')
 
-def download_artifact(repo: str, run_id: str, artifact_name: str, pat_token: str | None):
+    args = parser.parse_args()
+
+    if not args.pat_token:
+        sys.stderr.write(
+            "ERROR: GitHub PAT token not provided.\n"
+            "  Either pass --pat-token <token> or set the "
+            "BABYLON_API_GITHUB_PAT_TOKEN environment variable.\n"
+        )
+        sys.exit(1)
+
+    return args
+
+def download_artifact(repo: str, run_id: str, artifact_name: str, pat_token: str | None=None):
     """
     Downloads an artifact from a GitHub Actions workflow run using the GitHub REST API.
     """
     if not pat_token:
-        pat_token = os.environ['BABYLON_API_ARTIFACT_NAME']
+        pat_token = os.environ.get('BABYLON_API_ARTIFACT_NAME')
 
     if not all([repo, run_id, artifact_name, pat_token]):
         print("Error: Missing input.")
@@ -74,7 +88,7 @@ def download_artifact(repo: str, run_id: str, artifact_name: str, pat_token: str
 
 
 if __name__ == "__main__":
-    args = _ARGS_PARSER.parse_known_args()[0]
+    args = parse_args()
     run_id = args.run_id
     artifact_name = args.artifact_name
     repo = args.repo
