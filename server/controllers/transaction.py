@@ -46,3 +46,6 @@ def _transaction_search(transaction_type: str, start: int, end: int):
     )
     history = handler.fetch_transaction_history()
     return [asdict(h) for h in history]
+
+async def transaction_get_by_id(transaction_id: str) -> tuple[dict, int]:
+    return {}, HTTPStatus.OK
