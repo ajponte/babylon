@@ -34,6 +34,7 @@ class Database:
         # Determines how often (in seconds) the connection pool should refresh.
         pool_recycle = config["SQLALCHEMY_POOL_RECYCLE"]
         self._engine = create_engine(url=_database_url, pool_recycle=pool_recycle)
+        self._session_maker = sessionmaker(bind=self._engine)
         self._base = sqlalchemy_base
 
     def create_tables(self):
@@ -59,6 +60,16 @@ class Database:
             _LOGGER.debug("Disposed connection pool.")
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
 
+        @flask_app.teardown_appcontext
+        def close_session(error=None):
+            """
+            Handler for cleaning up DB sessions.
+            """
+            session = getattr(g, SESSION_APP_CTX_KEY, None)
+            if session is not None:
+                _LOGGER.debug('Closing cached sqlalchemy session')
+                session.close()
+
 
 def get_session() -> Session:
     """
@@ -68,13 +79,13 @@ def get_session() -> Session:
 
     :return: An existing SQLAlchemy session, or a newly created one.
     """
-    session = g.get(SESSION_APP_CTX_KEY, None)
+    session = getattr(g, SESSION_APP_CTX_KEY, None)
     if not session:
         _LOGGER.info("No session object cached. Creating a new one")
         # pylint: disable=protected-access
         db_state = current_app.extensions[DATABASE_EXTENSION_KEY]
-        session_factory = sessionmaker(bind=db_state._engine)
-        session = session_factory()
+        session = db_state._session_maker()
+        setattr(g, SESSION_APP_CTX_KEY, session)
     else:
         _LOGGER.info("Using existing cached session object.")
 

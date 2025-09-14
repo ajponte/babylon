@@ -30,6 +30,16 @@ class TransactionDto:
     slip_number: str | None = None
 
 
+class TransactionReadHandler:
+    def __init__(self, *, transaction_id: str, transaction_type: str):
+        self._transaction_id = transaction_id
+        self._transaction_type = transaction_type
+
+    def read_transaction(self) -> TransactionDto | None:
+        tx_dao = select_transaction_dao(self._transaction_type)
+        result = tx_dao.get_transaction_by_id(tx_id=self._transaction_id, session=get_session())
+        return _to_transaction_dto(transaction=result, transaction_type=self._transaction_type)
+
 class TransactionHistoryHandler:
     """
     Service object for fetching transaction history.

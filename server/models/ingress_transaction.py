@@ -72,6 +72,6 @@ class IngressTransaction(BASE):
         :param session: SQLAlchemy Session.
         :return: The transaction, or null
         """
-        inress_tx = session.get(cls, cls.id == tx_id).one_or_none()  # type: ignore
+        inress_tx = session.query(cls).filter(cls.id==tx_id).one_or_none()  # type: ignore
         logging.debug(f"results for ingress: {inress_tx}")
         return inress_tx
