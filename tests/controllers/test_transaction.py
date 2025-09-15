@@ -1,12 +1,15 @@
 import datetime
 
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+
+import pytest
 
 from server.services.transaction_history import TransactionDto
 
 
-BASE_URI = '/api/history/transactions/'
+BASE_URI_TRANSACTIONS = '/api/history/transactions'
+BASE_URI_TRANSACTION = '/api/history/transaction'
 HTTP_HEADER_CONTENT_TYPE = 'application/json'
 
 
@@ -28,13 +31,13 @@ MOCK_EGRESS_SOURCE = "ATM_WITHDRAWAL"
 MOCK_INGRESS_SOURCE = "INVESTMENT"
 
 
-
-@patch('server.controllers.transaction.TransactionHistoryHandler')
+@patch('server.managers.transaction.TransactionHistoryHandler')
 def test_get_egress_transaction(
         mock_transaction_history_handler,
         app_client
 ):
-    mock_transaction_history_handler.fetch_transaction_history.return_value = [
+    mock_handler_instance = mock_transaction_history_handler.return_value
+    mock_handler_instance.fetch_transaction_history.return_value = [
         TransactionDto(
             id=MOCK_EGRESS_TRANSACTION_ID,
             transaction_type=TRANSACTION_TYPE_EGRESS,
@@ -47,7 +50,7 @@ def test_get_egress_transaction(
     mock_start = 1757370903
     mock_end = 1757457303
     # Remove the trailing slash from the URI to match the server's expected path
-    uri = f'{BASE_URI}{TRANSACTION_TYPE_EGRESS}'
+    uri = f'{BASE_URI_TRANSACTIONS}/{TRANSACTION_TYPE_EGRESS}'
     query_params = {
         'start': mock_start,
         'end': mock_end
@@ -56,12 +59,13 @@ def test_get_egress_transaction(
     resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
 
-@patch('server.controllers.transaction.TransactionHistoryHandler')
+@patch('server.managers.transaction.TransactionHistoryHandler')
 def test_get_ingress_transaction(
         mock_transaction_history_handler,
         app_client
 ):
-    mock_transaction_history_handler.fetch_transaction_history.return_value = [
+    mock_handler_instance = mock_transaction_history_handler.return_value
+    mock_handler_instance.fetch_transaction_history.return_value = [
         TransactionDto(
             id=MOCK_INGRESS_TRANSACTION_ID,
             transaction_type=TRANSACTION_TYPE_INGRESS,
@@ -73,8 +77,7 @@ def test_get_ingress_transaction(
     ]
     mock_start = 1757370903
     mock_end = 1757457303
-    # Remove the trailing slash from the URI to match the server's expected path
-    uri = f'{BASE_URI}{TRANSACTION_TYPE_INGRESS}'
+    uri = f'{BASE_URI_TRANSACTIONS}/{TRANSACTION_TYPE_INGRESS}'
     query_params = {
         'start': mock_start,
         'end': mock_end
@@ -82,3 +85,35 @@ def test_get_ingress_transaction(
     headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
     resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.OK
+
+@patch('server.managers.transaction.TransactionReadHandler')
+def test_transaction_get_by_id(mock_transaction_read_handler, app_client):
+    mock_handler_instance = mock_transaction_read_handler.return_value
+    mock_handler_instance.read_transaction.return_value = TransactionDto(
+        id=MOCK_INGRESS_TRANSACTION_ID,
+        transaction_type=TRANSACTION_TYPE_INGRESS,
+        date_posted=MOCK_DATE_POSTED,
+        amount=MOCK_AMOUNT,
+        source=MOCK_INGRESS_SOURCE,
+        description=MOCK_DESCRIPTION
+    )
+
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    query_params = {'transactionId': MOCK_EGRESS_TRANSACTION_ID, "transactionType": TRANSACTION_TYPE_INGRESS}
+    uri = f'{BASE_URI_TRANSACTION}'
+    resp = app_client.get(uri, params=query_params, headers=headers)
+    assert resp.status_code == HTTPStatus.OK
+    transaction = resp.json()
+    assert transaction['id'] == MOCK_INGRESS_TRANSACTION_ID
+    assert transaction['transaction_type'] == TRANSACTION_TYPE_INGRESS
+
+@patch('server.managers.transaction.TransactionReadHandler')
+def test_transaction_get_by_id_not_found(mock_transaction_read_handler, app_client):
+    """Test that we return an HTTP 404 when no DAO is found."""
+    mock_handler_instance = mock_transaction_read_handler.return_value
+    mock_handler_instance.read_transaction.return_value = None
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    query_params = {'transactionId': MOCK_EGRESS_TRANSACTION_ID, "transactionType": TRANSACTION_TYPE_INGRESS}
+    uri = f'{BASE_URI_TRANSACTION}'
+    resp = app_client.get(uri, params=query_params, headers=headers)
+    assert resp.status_code == HTTPStatus.NOT_FOUND

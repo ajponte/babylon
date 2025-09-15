@@ -2,15 +2,16 @@
 
 import logging
 from http import HTTPStatus
-from dataclasses import asdict
 from typing import Any
 
-from server.services.transaction_history import TransactionHistoryHandler
+from server.managers.transaction import transaction_search, transaction_fetch_by_id
+
+_LOGGER = logging.getLogger()
 
 
 async def transaction_history(
     transaction_type, start: int, end: int
-) -> tuple[dict[str, Any], int]:
+) -> tuple[dict[str, Any] | None, int]:
     """
     Fetch transaction history between start and end.
 
@@ -24,7 +25,7 @@ async def transaction_history(
         return {"message": message}, HTTPStatus.BAD_REQUEST
     try:
         logging.debug(f"Fetching transaction between {start} and {end}")
-        resp = _transaction_search(transaction_type, start, end)
+        resp = transaction_search(transaction_type, start, end)
         return {"transactions": resp}, HTTPStatus.OK
     except Exception as e:
         message = f"Unknown exception while fetching transaction history between {start}, {end}."
@@ -32,17 +33,27 @@ async def transaction_history(
         return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-def _transaction_search(transaction_type: str, start: int, end: int):
+async def transaction_get_by_id(
+    transaction_id: str, transaction_type: str
+) -> tuple[dict[str, Any] | None, int]:
     """
-    Search for transactions.
+    Fetch a transaction by its ID.
 
-    :param transaction_type: Transaction type.
-    :param start: Start UTC.
-    :param end: End UTC.
-    :return: Any transactions within the bounds.
+    :param transaction_id: Transaction ID.
+    :param transaction_type: Type of transactions (ingress/egress).
+    :return: Transaction entity.
     """
-    handler = TransactionHistoryHandler(
-        transaction_type=transaction_type, start=start, end=end
-    )
-    history = handler.fetch_transaction_history()
-    return [asdict(h) for h in history]
+    try:
+        result = transaction_fetch_by_id(
+            transaction_id=transaction_id, transaction_type=transaction_type
+        )
+        if not result:
+            message = f"No result returned for transaction {transaction_id}"
+            _LOGGER.debug(message)
+            return {"message": message}, HTTPStatus.NOT_FOUND
+        _LOGGER.debug(f"Result successfully returned for transaction {transaction_id}")
+        return result, HTTPStatus.OK
+    except Exception as e:
+        message = f"Error fetching {transaction_type} transaction. Error: {e}"
+        _LOGGER.debug(message)
+        return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR

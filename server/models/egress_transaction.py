@@ -51,9 +51,13 @@ class EgressTransaction(BASE):
         :param session: SQLAlchemy Session.
         :return: The transaction, or null
         """
-        egress_tx = session.get(cls, cls.id == tx_id).one_or_none()  # type: ignore
-        logging.debug(f"results for egress: {egress_tx}")
-        return egress_tx
+        try:
+            egress_tx = session.query(cls).filter(cls.id == tx_id).one_or_none()  # type: ignore
+            _LOGGER.debug(f"results for egress: {egress_tx}")
+            return egress_tx
+        except Exception as e:
+            _LOGGER.info(f"Error while fetching transaction {tx_id}")
+            raise e
 
     @classmethod
     def get_transactions_posted_within_bounds(
