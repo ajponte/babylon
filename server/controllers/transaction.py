@@ -33,7 +33,6 @@ async def transaction_history(
         return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-# pylint: disable=unused-argument
 async def transaction_get_by_id(
     transaction_id: str, transaction_type: str
 ) -> tuple[dict[str, Any] | None, int]:
