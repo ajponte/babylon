@@ -80,7 +80,9 @@ async def transaction_put() -> tuple[dict[str, str], int]:
     slip_number = payload.get("slipNumber")
 
     try:
-        _LOGGER.debug(f'Sending request to persister to create a {transaction_type} transaction')
+        _LOGGER.debug(
+            f"Sending request to persister to create a {transaction_type} transaction"
+        )
         transaction_id = create_transaction(
             transaction_type=transaction_type,
             transaction_source=transaction_source,

@@ -1,4 +1,5 @@
 """Methods for managing transaction logic."""
+
 import logging
 from dataclasses import asdict
 from datetime import date, datetime
@@ -66,8 +67,10 @@ def create_transaction(
     :return: The ID of the newly created transaction.
     """
     persister = TransactionPersister(transaction_type=transaction_type)
-    if type(date_posted) is str:
-        _LOGGER.info('datePosted is a string. Converting to a format this server understands')
+    if isinstance(date_posted, str):
+        _LOGGER.info(
+            "datePosted is a string. Converting to a format this server understands"
+        )
         format_string = "%Y-%m-%d"
         date_posted = datetime.strptime(date_posted, format_string)
     return persister.create_transaction(
