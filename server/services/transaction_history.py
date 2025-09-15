@@ -30,6 +30,46 @@ class TransactionDto:
     slip_number: str | None = None
 
 
+class TransactionPersister:
+    """
+    Service object for creating transactions.
+    """
+
+    def __init__(self, transaction_type: str):
+        """
+        Constructor.
+
+        :param transaction_type: Transaction type.
+        """
+        self._transaction_type = transaction_type
+
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
+    def create_transaction(
+        self,
+        amount: float,
+        source: str,
+        date_posted: date,
+        description: str,
+        slip_number: str | None,
+    ) -> str:
+        """
+        Create a transaction record.
+
+        :return: The ID of the newly created record.
+        """
+        tx_dao = select_transaction_dao(self._transaction_type)
+        tx_id: str = tx_dao.create_transaction(
+            transaction_source=source,
+            amount=amount,
+            date_posted=date_posted,
+            description=description,
+            slip_number=slip_number,
+            session=get_session(),
+        )
+        return tx_id
+
+
 class TransactionReadHandler:
     """
     Service object for reading a transaction.

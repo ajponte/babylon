@@ -43,6 +43,48 @@ class EgressTransaction(BASE):
         return session.query(cls).all()
 
     @classmethod
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments
+    def create_transaction(
+        cls,
+        transaction_source: str,
+        date_posted: date,
+        amount: float,
+        description: str,
+        slip_number: str | None,
+        session: Session,
+    ) -> str:
+        """
+        Create a new egress transaction record.
+
+        :param transaction_source: Transaction source.
+        :param date_posted: Date posted.
+        :param amount: Amount posted.
+        :param description: Description.
+        :param slip_number: Optional slip number.
+        :param session: SQLAlchemy session.
+        :return: The ID of the created record.
+        """
+        transaction = cls(
+            date_posted=date_posted,
+            amount=amount,
+            source=EgressTransactionSource(transaction_source),
+            description=description,
+            slip_number=slip_number,
+        )
+
+        try:
+            session.add(transaction)
+            session.commit()
+            return transaction.id
+        except Exception as e:
+            message = f"Error adding egress object. Error: {e}"
+            _LOGGER.info(message)
+            _LOGGER.debug("Rolling back")
+            session.rollback()
+            raise e
+
+    @classmethod
     def get_transaction_by_id(cls, tx_id: str, session: Session):
         """
         Return any transactions by ID.

@@ -1,11 +1,12 @@
 """Methods for managing transaction logic."""
 
 from dataclasses import asdict
-
+from datetime import date
 
 from server.services.transaction_history import (
     TransactionHistoryHandler,
     TransactionReadHandler,
+    TransactionPersister,
 )
 
 
@@ -38,3 +39,34 @@ def transaction_search(transaction_type: str, start: int, end: int):
     )
     history = handler.fetch_transaction_history()
     return [asdict(h) for h in history]
+
+
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
+def create_transaction(
+    transaction_type: str,
+    transaction_source: str,
+    date_posted: date,
+    amount: float,
+    description: str,
+    slip_number: str | str,
+) -> str:
+    """
+    Create new transaction record.
+
+    :param transaction_type: Transaction type.
+    :param transaction_source: Transaction source.
+    :param date_posted: Date posted.
+    :param amount: Amount posted.
+    :param description: Description.
+    :param slip_number: Optional slip number.
+    :return: The ID of the newly created transaction.
+    """
+    persister = TransactionPersister(transaction_type=transaction_type)
+    return persister.create_transaction(
+        source=transaction_source,
+        date_posted=date_posted,
+        amount=amount,
+        description=description,
+        slip_number=slip_number,
+    )
