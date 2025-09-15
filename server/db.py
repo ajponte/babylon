@@ -61,13 +61,13 @@ class Database:
         flask_app.extensions[DATABASE_EXTENSION_KEY] = self
 
         @flask_app.teardown_appcontext
-        def close_session(error=None):
+        def close_session(error=None):  # pylint: disable=unused-argument
             """
             Handler for cleaning up DB sessions.
             """
             session = getattr(g, SESSION_APP_CTX_KEY, None)
             if session is not None:
-                _LOGGER.debug('Closing cached sqlalchemy session')
+                _LOGGER.debug("Closing cached sqlalchemy session")
                 session.close()
 
 

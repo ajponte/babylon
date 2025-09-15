@@ -1,12 +1,15 @@
+"""Methods for managing transaction logic."""
+
 from dataclasses import asdict
 
-from server.services.transaction_history import TransactionHistoryHandler, TransactionReadHandler
+
+from server.services.transaction_history import (
+    TransactionHistoryHandler,
+    TransactionReadHandler,
+)
 
 
-def transaction_fetch_by_id(
-    transaction_id: str,
-    transaction_type: str
-) -> dict | None:
+def transaction_fetch_by_id(transaction_id: str, transaction_type: str) -> dict | None:
     """
     Return any transaction by ID.
 
@@ -15,16 +18,13 @@ def transaction_fetch_by_id(
     :return: Transaction.
     """
     handler = TransactionReadHandler(
-        transaction_id=transaction_id,
-        transaction_type=transaction_type
+        transaction_id=transaction_id, transaction_type=transaction_type
     )
-    return handler.read_transaction()
+    tx = handler.read_transaction()
+    return asdict(tx) if tx else None
 
 
-
-def transaction_search(
-    transaction_type: str, start: int, end: int
-):
+def transaction_search(transaction_type: str, start: int, end: int):
     """
     Search for transactions.
 

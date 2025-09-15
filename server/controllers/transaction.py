@@ -8,6 +8,7 @@ from server.managers.transaction import transaction_search, transaction_fetch_by
 
 _LOGGER = logging.getLogger()
 
+
 async def transaction_history(
     transaction_type, start: int, end: int
 ) -> tuple[dict[str, Any] | None, int]:
@@ -24,9 +25,7 @@ async def transaction_history(
         return {"message": message}, HTTPStatus.BAD_REQUEST
     try:
         logging.debug(f"Fetching transaction between {start} and {end}")
-        resp = transaction_search(
-            transaction_type, start, end
-        )
+        resp = transaction_search(transaction_type, start, end)
         return {"transactions": resp}, HTTPStatus.OK
     except Exception as e:
         message = f"Unknown exception while fetching transaction history between {start}, {end}."
@@ -36,8 +35,7 @@ async def transaction_history(
 
 # pylint: disable=unused-argument
 async def transaction_get_by_id(
-    transaction_id: str,
-    transaction_type: str
+    transaction_id: str, transaction_type: str
 ) -> tuple[dict[str, Any] | None, int]:
     """
     Fetch a transaction by its ID.
@@ -47,16 +45,16 @@ async def transaction_get_by_id(
     :return: Transaction entity.
     """
     try:
-        result = transaction_fetch_by_id(transaction_id=transaction_id, transaction_type=transaction_type)
+        result = transaction_fetch_by_id(
+            transaction_id=transaction_id, transaction_type=transaction_type
+        )
         if not result:
-            message = f'No result returned for transaction {transaction_id}'
+            message = f"No result returned for transaction {transaction_id}"
             _LOGGER.debug(message)
-            return {'message': message}, HTTPStatus.NOT_FOUND
-        _LOGGER.debug(f'Result successfully returned for transaction {transaction_id}')
+            return {"message": message}, HTTPStatus.NOT_FOUND
+        _LOGGER.debug(f"Result successfully returned for transaction {transaction_id}")
         return result, HTTPStatus.OK
     except Exception as e:
-        message = f'Error fetching {transaction_type} transaction. Error: {e}'
+        message = f"Error fetching {transaction_type} transaction. Error: {e}"
         _LOGGER.debug(message)
-        return {
-            "message": message
-        }, HTTPStatus.INTERNAL_SERVER_ERROR
+        return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR

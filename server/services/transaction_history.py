@@ -31,14 +31,38 @@ class TransactionDto:
 
 
 class TransactionReadHandler:
+    """
+    Service object for reading a transaction.
+    """
+
     def __init__(self, *, transaction_id: str, transaction_type: str):
+        """
+        Constructor.
+
+        :param transaction_id: Transaction ID.
+        :param transaction_type: Transaction type.
+        """
         self._transaction_id = transaction_id
         self._transaction_type = transaction_type
 
     def read_transaction(self) -> TransactionDto | None:
+        """
+        Read a transaction from the DB.
+
+        :return: The transaction in the form of a `TransactionDto`.
+        """
         tx_dao = select_transaction_dao(self._transaction_type)
-        result = tx_dao.get_transaction_by_id(tx_id=self._transaction_id, session=get_session())
-        return _to_transaction_dto(transaction=result, transaction_type=self._transaction_type)
+        result = tx_dao.get_transaction_by_id(
+            tx_id=self._transaction_id, session=get_session()
+        )
+        return (
+            _to_transaction_dto(
+                transaction=result, transaction_type=self._transaction_type
+            )
+            if result
+            else None
+        )
+
 
 class TransactionHistoryHandler:
     """
