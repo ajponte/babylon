@@ -1,13 +1,16 @@
 """Methods for managing transaction logic."""
-
+import logging
 from dataclasses import asdict
-from datetime import date
+from datetime import date, datetime
 
 from server.services.transaction_history import (
     TransactionHistoryHandler,
     TransactionReadHandler,
     TransactionPersister,
 )
+
+
+_LOGGER = logging.getLogger()
 
 
 def transaction_fetch_by_id(transaction_id: str, transaction_type: str) -> dict | None:
@@ -46,7 +49,7 @@ def transaction_search(transaction_type: str, start: int, end: int):
 def create_transaction(
     transaction_type: str,
     transaction_source: str,
-    date_posted: date,
+    date_posted: date | str,
     amount: float,
     description: str,
     slip_number: str | str,
@@ -63,6 +66,10 @@ def create_transaction(
     :return: The ID of the newly created transaction.
     """
     persister = TransactionPersister(transaction_type=transaction_type)
+    if type(date_posted) is str:
+        _LOGGER.info('datePosted is a string. Converting to a format this server understands')
+        format_string = "%Y-%m-%d"
+        date_posted = datetime.strptime(date_posted, format_string)
     return persister.create_transaction(
         source=transaction_source,
         date_posted=date_posted,

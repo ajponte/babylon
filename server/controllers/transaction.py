@@ -80,6 +80,7 @@ async def transaction_put() -> tuple[dict[str, str], int]:
     slip_number = payload.get("slipNumber")
 
     try:
+        _LOGGER.debug(f'Sending request to persister to create a {transaction_type} transaction')
         transaction_id = create_transaction(
             transaction_type=transaction_type,
             transaction_source=transaction_source,
@@ -92,7 +93,7 @@ async def transaction_put() -> tuple[dict[str, str], int]:
             message = "No transaction ID returned from creating."
             _LOGGER.info(message)
             return {"message": message}, HTTPStatus.CONFLICT
-        return {"transactionID": transaction_id}, HTTPStatus.CREATED
+        return {"transactionId": transaction_id}, HTTPStatus.CREATED
     except Exception as e:
         message = f"Unknown exception while creating transaction. Error: {e}"
         _LOGGER.debug(message)

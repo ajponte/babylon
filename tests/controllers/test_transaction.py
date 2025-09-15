@@ -1,4 +1,5 @@
 import datetime
+import json
 
 from http import HTTPStatus
 from unittest.mock import patch, MagicMock
@@ -6,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pytest
 
 from server.services.transaction_history import TransactionDto
-
+from tests.conftest import app_client
 
 BASE_URI_TRANSACTIONS = '/api/history/transactions'
 BASE_URI_TRANSACTION = '/api/history/transaction'
@@ -117,3 +118,57 @@ def test_transaction_get_by_id_not_found(mock_transaction_read_handler, app_clie
     uri = f'{BASE_URI_TRANSACTION}'
     resp = app_client.get(uri, params=query_params, headers=headers)
     assert resp.status_code == HTTPStatus.NOT_FOUND
+
+
+@patch('server.managers.transaction.TransactionPersister')
+def test_transaction_put_ingress(mock_transaction_persister, app_client):
+    """Test creating an ingress transaction"""
+    mock_handler_instance = mock_transaction_persister.return_value
+    mock_handler_instance.create_transaction.return_value = MOCK_INGRESS_TRANSACTION_ID
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    uri = f'{BASE_URI_TRANSACTION}'
+    transaction_request_body = {
+        'amount': MOCK_AMOUNT,
+        'transactionSource': 'INVESTMENT',
+        'description': MOCK_DESCRIPTION,
+        'transactionType': TRANSACTION_TYPE_INGRESS,
+        'datePosted': str(MOCK_DATE_POSTED)
+    }
+    resp = app_client.put(uri, headers=headers, data=json.dumps(transaction_request_body))
+    assert resp.status_code == HTTPStatus.CREATED
+    assert resp.json()['transactionId'] == MOCK_INGRESS_TRANSACTION_ID
+
+@patch('server.managers.transaction.TransactionPersister')
+def test_transaction_put_egress(mock_transaction_persister, app_client):
+    """Test creating an egress transaction"""
+    mock_handler_instance = mock_transaction_persister.return_value
+    mock_handler_instance.create_transaction.return_value = MOCK_EGRESS_TRANSACTION_ID
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    uri = f'{BASE_URI_TRANSACTION}'
+    transaction_request_body = {
+        'amount': MOCK_AMOUNT,
+        'transactionSource': 'ATM_WITHDRAWAL',
+        'description': MOCK_DESCRIPTION,
+        'transactionType': TRANSACTION_TYPE_EGRESS,
+        'datePosted': str(MOCK_DATE_POSTED)
+    }
+    resp = app_client.put(uri, headers=headers, data=json.dumps(transaction_request_body))
+    assert resp.status_code == HTTPStatus.CREATED
+    assert resp.json()['transactionId'] == MOCK_EGRESS_TRANSACTION_ID
+
+@patch('server.managers.transaction.TransactionPersister')
+def test_transaction_put_egress_conflict(mock_transaction_persister, app_client):
+    """Test that we raise a conflict status when no transaction ID was returned from the persister."""
+    mock_handler_instance = mock_transaction_persister.return_value
+    mock_handler_instance.create_transaction.return_value = None
+    headers = {"Authorization": f"Bearer {MOCK_BEARER_TOKEN}", 'content-type': HTTP_HEADER_CONTENT_TYPE}
+    uri = f'{BASE_URI_TRANSACTION}'
+    transaction_request_body = {
+        'amount': MOCK_AMOUNT,
+        'transactionSource': 'ATM_WITHDRAWAL',
+        'description': MOCK_DESCRIPTION,
+        'transactionType': TRANSACTION_TYPE_EGRESS,
+        'datePosted': str(MOCK_DATE_POSTED)
+    }
+    resp = app_client.put(uri, headers=headers, data=json.dumps(transaction_request_body))
+    assert resp.status_code == HTTPStatus.CONFLICT
