@@ -4,7 +4,13 @@ import logging
 from http import HTTPStatus
 from typing import Any
 
-from server.managers.transaction import transaction_search, transaction_fetch_by_id
+import connexion
+
+from server.managers.transaction import (
+    transaction_search,
+    transaction_fetch_by_id,
+    create_transaction,
+)
 
 _LOGGER = logging.getLogger()
 
@@ -55,5 +61,42 @@ async def transaction_get_by_id(
         return result, HTTPStatus.OK
     except Exception as e:
         message = f"Error fetching {transaction_type} transaction. Error: {e}"
+        _LOGGER.debug(message)
+        return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+async def transaction_put() -> tuple[dict[str, str], int]:
+    """
+    Create a new transaction.
+
+    :return: Tuple, which upon a successful operation, contains the transaction ID.
+    """
+    payload = await connexion.request.json()
+    transaction_type = payload["transactionType"]
+    transaction_source = payload["transactionSource"]
+    date_posted = payload["datePosted"]
+    amount = payload["amount"]
+    description = payload["description"]
+    slip_number = payload.get("slipNumber")
+
+    try:
+        _LOGGER.debug(
+            f"Sending request to persister to create a {transaction_type} transaction"
+        )
+        transaction_id = create_transaction(
+            transaction_type=transaction_type,
+            transaction_source=transaction_source,
+            date_posted=date_posted,
+            amount=amount,
+            description=description,
+            slip_number=slip_number,
+        )
+        if not transaction_id:
+            message = "No transaction ID returned from creating."
+            _LOGGER.info(message)
+            return {"message": message}, HTTPStatus.CONFLICT
+        return {"transactionId": transaction_id}, HTTPStatus.CREATED
+    except Exception as e:
+        message = f"Unknown exception while creating transaction. Error: {e}"
         _LOGGER.debug(message)
         return {"message": message}, HTTPStatus.INTERNAL_SERVER_ERROR
