@@ -55,6 +55,10 @@ type HistoryTransaction struct {
 	Id string `json:"id,omitempty"`
 }
 
+type TransactionPutResponse struct {
+	TransactionId string `json:"transactionId"`
+}
+
 // Transaction represents a single transaction.
 type Transaction struct {
 	// The type of transaction (ingress or egress).
@@ -88,6 +92,7 @@ type TransactionHistorySearchResponse struct {
 	Transactions []HistoryTransaction `json:"transactions,omitempty"`
 }
 
+// DoEcho sends a GET request to the /echo endpoint.
 func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response, *EchoResponse, error) {
 	// Construct the full URL by combining the base path with the endpoint path.
 	localVarPath := c.BasePath.String() + "/echo"
@@ -193,18 +198,18 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 }
 
 // AddTransaction sends a PUT request to the /history/transaction endpoint.
-func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction) (*http.Response, *HistoryTransaction, error) {
+func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction) (*http.Response, *TransactionPutResponse, error) {
 	// Marshal the request body.
 	bodyBytes, err := json.Marshal(transaction)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error marshaling request body: %w", err)
 	}
 
-	// Use ResolveReference to correctly combine the base URL with the endpoint path.
-	localVarPath := c.BasePath.ResolveReference(&url.URL{Path: "/history/transaction"})
+	// Construct the full URL by combining the base path with the endpoint path.
+	localVarPath := c.BasePath.String() + "/history/transaction"
 
 	// Create the request.
-	req, err := http.NewRequestWithContext(ctx, "PUT", localVarPath.String(), bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, "PUT", localVarPath, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -221,7 +226,7 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusCreated {
-		var result HistoryTransaction
+		var result TransactionPutResponse
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)

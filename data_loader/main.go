@@ -12,7 +12,7 @@ import (
 
 func main() {
 	// Create a new API client.
-	// We'll use a dummy base URL since this is for demonstration.
+	// The base URL should be the server address plus the base path from the OpenAPI spec.
 	client, err := apiClient.NewAPIClient(&http.Client{}, "http://localhost:5003/api")
 	if err != nil {
 		log.Fatalf("Failed to create API client: %v", err)
@@ -22,38 +22,38 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// --- Test the Echo endpoint ---
-	fmt.Println("--- Testing /echo endpoint ---")
-	echoInput := "helloworld"
-	resp, echoResp, err := client.DoEcho(ctx, echoInput)
+	// // --- Test the Echo endpoint ---
+	// fmt.Println("--- Testing /echo endpoint ---")
+	// echoInput := "helloworld"
+	// resp, echoResp, err := client.DoEcho(ctx, echoInput)
+	// if err != nil {
+	// 	log.Printf("Error calling Echo API: %v", err)
+	// } else {
+	// 	fmt.Printf("Echo API Response: %+v, Status: %s\n", *echoResp, resp.Status)
+	// }
+	// fmt.Println()
+
+	// --- Test the Add Transaction endpoint ---
+	fmt.Println("--- Testing PUT /history/transaction endpoint ---")
+	newTransaction := apiClient.Transaction{
+		TransactionType:   "ingress",
+		TransactionSource: "SALARY",
+		DatePosted:        "2025-09-15",
+		Description:       "Monthly salary",
+		Amount:            5000.00,
+	}
+	resp, addTxnResp, err := client.AddTransaction(ctx, newTransaction)
 	if err != nil {
-		log.Printf("Error calling Echo API: %v", err)
+		log.Printf("Error calling AddTransaction API: %v", err)
 	} else {
-		fmt.Printf("Echo API Response: %+v, Status: %s\n", *echoResp, resp.Status)
+		fmt.Printf("AddTransaction API Response: %+v, Status: %s\n", *addTxnResp, resp.Status)
 	}
 	fmt.Println()
 
-	// 	// --- Test the Add Transaction endpoint ---
-	// 	fmt.Println("--- Testing PUT /history/transaction endpoint ---")
-	// 	newTransaction := apiClient.Transaction{
-	// 		TransactionType:   "ingress",
-	// 		TransactionSource: "SALARY",
-	// 		DatePosted:        "2025-09-15",
-	// 		Description:       "Monthly salary",
-	// 		Amount:            5000.00,
-	// 	}
-	// 	resp, addTxnResp, err := client.AddTransaction(ctx, newTransaction)
-	// 	if err != nil {
-	// 		log.Printf("Error calling AddTransaction API: %v", err)
-	// 	} else {
-	// 		fmt.Printf("AddTransaction API Response: %+v, Status: %s\n", *addTxnResp, resp.Status)
-	// 	}
-	// 	fmt.Println()
-
 	// 	// --- Test the Get Transaction by ID endpoint ---
 	// 	fmt.Println("--- Testing GET /history/transaction endpoint ---")
-	// 	// Using a dummy ID for this example.
-	// 	transactionID := "f7bf189b-e7c2-4f85-bf73-0c45e7825a74"
+	// 	// Use the transaction ID from the previous PUT request for this example.
+	// 	transactionID := addTxnResp.Id
 	// 	transactionType := "ingress"
 	// 	resp, getTxnResp, err := client.GetTransactionById(ctx, transactionID, transactionType)
 	// 	if err != nil {
@@ -65,7 +65,7 @@ func main() {
 
 	// 	// --- Test the Get Transaction History endpoint ---
 	// 	fmt.Println("--- Testing GET /history/transactions/{transactionType} endpoint ---")
-	// 	historyType := "egress"
+	// 	historyType := "ingress"
 	// 	// Example timestamps: Start of day today, end of day today.
 	// 	// In a real scenario, you'd use a real timestamp range.
 	// 	now := time.Now().UTC()
