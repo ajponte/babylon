@@ -216,7 +216,8 @@ func dataSource(dataSourceFileName string) (string, error) {
 	var parsedName string
 	if strings.ContainsAny(strings.ToLower(dataSourceFileName), "chase") {
 		parsedName = "chase"
+	} else {
+		return "", fmt.Errorf("unable to find a relevant data source for the CSV filename: %s", dataSourceFileName)
 	}
-	fmt.Errorf("Unable to find a relevant data source for the CSV filename: %s", dataSourceFileName)
 	return parsedName, nil
 }
