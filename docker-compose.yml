@@ -40,6 +40,19 @@ services:
       timeout: 5s
       retries: 5
 
+  # MongoDB database service.
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017" # Maps host port 27017 to the container's port 27017.
+    volumes:
+      - mongodb_data:/data/db # Persists the database data.
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin # Sets the root username.
+      - MONGO_INITDB_ROOT_PASSWORD=password # Sets the root password.
+
   # Your Gunicorn application service.
   babylon-app:
     image: babylon-app:latest # Make sure you have this image built locally.
@@ -52,6 +65,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      mongodb:
+        condition: service_started
     environment:
       # These environment variables link your app to the OpenBao container.
       # The hostname `openbao` is automatically resolved by Docker Compose.
@@ -60,6 +75,8 @@ services:
       # Environment variables for connecting to the PostgreSQL database.
       # The port here must always be 5432 for internal Docker networking.
       - DATABASE_URL=postgresql://user:password@postgres:5432/babylon
+      # Environment variables for connecting to the MongoDB database.
+      - MONGODB_URI=mongodb://admin:password@mongodb:27017
       # Your application's other environment variables go here
       # For example:
       # - FLASK_SECRET_KEY=...
@@ -68,3 +85,4 @@ services:
 volumes:
   openbao_data:
   postgres_data:
+  mongodb_data:
