@@ -2,84 +2,61 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"net/http"
+	"os"
 	"time"
+)
 
-	"babylon/data_loader/apiClient"
+const (
+	// Default values if environment variables are not set
+	defaultMongoURI = "mongodb://localhost:27017"
+	defaultCSVDir   = "./data"
+	envMongoURI     = "MONGO_URI"
+	envCSVDirectory = "CSV_DIR"
 )
 
 func main() {
-	// Create a new API client.
-	// The base URL should be the server address plus the base path from the OpenAPI spec.
-	client, err := apiClient.NewAPIClient(&http.Client{}, "http://localhost:5003/api")
-	if err != nil {
-		log.Fatalf("Failed to create API client: %v", err)
+	// Read MongoDB URI from environment variable, fallback to default
+	mongoURI := os.Getenv(envMongoURI)
+	if mongoURI == "" {
+		mongoURI = defaultMongoURI
+		log.Printf("MongoDB URI not found in environment variable '%s', using default: %s", envMongoURI, defaultMongoURI)
 	}
 
-	// Create a context with a timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// Read CSV directory from environment variable, fallback to default
+	csvDirectory := os.Getenv(envCSVDirectory)
+	if csvDirectory == "" {
+		csvDirectory = defaultCSVDir
+		log.Printf("CSV directory not found in environment variable '%s', using default: %s", envCSVDirectory, defaultCSVDir)
+	}
+
+	// Create a context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// // --- Test the Echo endpoint ---
-	// fmt.Println("--- Testing /echo endpoint ---")
-	// echoInput := "helloworld"
-	// resp, echoResp, err := client.DoEcho(ctx, echoInput)
-	// if err != nil {
-	// 	log.Printf("Error calling Echo API: %v", err)
-	// } else {
-	// 	fmt.Printf("Echo API Response: %+v, Status: %s\n", *echoResp, resp.Status)
-	// }
-	// fmt.Println()
-
-	// --- Test the Add Transaction endpoint ---
-	fmt.Println("--- Testing PUT /history/transaction endpoint ---")
-	newTransaction := apiClient.Transaction{
-		TransactionType:   "ingress",
-		TransactionSource: "SALARY",
-		DatePosted:        "2025-09-15",
-		Description:       "Monthly salary",
-		Amount:            5000.00,
+	// Check if the data directory exists.
+	if _, err := os.Stat(csvDirectory); os.IsNotExist(err) {
+		log.Fatalf("Error: The directory '%s' does not exist. Please create it and place your CSV files inside.", csvDirectory)
 	}
-	resp, addTxnResp, err := client.AddTransaction(ctx, newTransaction)
+
+	// Connect to MongoDB
+	client, err := ConnectToMongoDB(ctx, mongoURI)
 	if err != nil {
-		log.Printf("Error calling AddTransaction API: %v", err)
-	} else {
-		fmt.Printf("AddTransaction API Response: %+v, Status: %s\n", *addTxnResp, resp.Status)
+		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
-	fmt.Println()
+	defer func() {
+		if err = client.Disconnect(ctx); err != nil {
+			log.Fatalf("Error disconnecting from MongoDB: %v", err)
+		}
+	}()
 
-	// 	// --- Test the Get Transaction by ID endpoint ---
-	// 	fmt.Println("--- Testing GET /history/transaction endpoint ---")
-	// 	// Use the transaction ID from the previous PUT request for this example.
-	// 	transactionID := addTxnResp.Id
-	// 	transactionType := "ingress"
-	// 	resp, getTxnResp, err := client.GetTransactionById(ctx, transactionID, transactionType)
-	// 	if err != nil {
-	// 		log.Printf("Error calling GetTransactionById API: %v", err)
-	// 	} else {
-	// 		fmt.Printf("GetTransactionById API Response: %+v, Status: %s\n", *getTxnResp, resp.Status)
-	// 	}
-	// 	fmt.Println()
+	log.Println("Successfully connected to MongoDB.")
 
-	// 	// --- Test the Get Transaction History endpoint ---
-	// 	fmt.Println("--- Testing GET /history/transactions/{transactionType} endpoint ---")
-	// 	historyType := "ingress"
-	// 	// Example timestamps: Start of day today, end of day today.
-	// 	// In a real scenario, you'd use a real timestamp range.
-	// 	now := time.Now().UTC()
-	// 	startTS := now.Add(-24 * time.Hour).Unix()
-	// 	endTS := now.Unix()
+	// Ingest CSV files from the specified directory
+	err = IngestCSVFiles(ctx, client, csvDirectory)
+	if err != nil {
+		log.Fatalf("Error ingesting CSV files: %v", err)
+	}
 
-	// resp, historyResp, err := client.GetTransactionHistory(ctx, historyType, startTS, endTS)
-	//
-	//	if err != nil {
-	//		log.Printf("Error calling GetTransactionHistory API: %v", err)
-	//	} else {
-	//
-	//		fmt.Printf("GetTransactionHistory API Response: %+v, Status: %s\n", *historyResp, resp.Status)
-	//	}
-	//
-	// fmt.Println()
+	log.Println("Data ingestion process completed successfully.")
 }
