@@ -98,7 +98,7 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 	localVarPath := c.BasePath.String() + "/echo"
 
 	// Create the request.
-	req, err := http.NewRequestWithContext(ctx, "GET", localVarPath, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, localVarPath, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -121,6 +121,7 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusOK {
 		var result EchoResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)
@@ -131,6 +132,7 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 		return resp, &result, nil
 	} else if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusInternalServerError {
 		var debugMsg DebugMessageResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
@@ -156,7 +158,7 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 	localVarPath.RawQuery = q.Encode()
 
 	// Create the request.
-	req, err := http.NewRequestWithContext(ctx, "GET", localVarPath.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, localVarPath.String(), nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -174,6 +176,7 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusOK {
 		var result HistoryTransaction
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)
@@ -209,7 +212,7 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 	localVarPath := c.BasePath.String() + "/history/transaction"
 
 	// Create the request.
-	req, err := http.NewRequestWithContext(ctx, "PUT", localVarPath, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, localVarPath, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -227,6 +230,7 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusCreated {
 		var result TransactionPutResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)
@@ -237,10 +241,12 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 		return resp, &result, nil
 	} else if resp.StatusCode >= 400 {
 		var debugMsg DebugMessageResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
 		}
+
 		if err = json.Unmarshal(body, &debugMsg); err != nil {
 			return resp, nil, fmt.Errorf("error unmarshaling error response body: %w", err)
 		}
@@ -262,7 +268,7 @@ func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType s
 	localVarPath.RawQuery = q.Encode()
 
 	// Create the request.
-	req, err := http.NewRequestWithContext(ctx, "GET", localVarPath.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, localVarPath.String(), nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error creating request: %w", err)
 	}
@@ -280,16 +286,20 @@ func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType s
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusOK {
 		var result TransactionHistorySearchResponse
+
 		body, err := io.ReadAll(resp.Body)
+
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)
 		}
+
 		if err = json.Unmarshal(body, &result); err != nil {
 			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
 		}
 		return resp, &result, nil
 	} else if resp.StatusCode >= 400 {
 		var debugMsg DebugMessageResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)

@@ -41,6 +41,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
+
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			log.Fatalf("Error disconnecting from MongoDB: %v", err)

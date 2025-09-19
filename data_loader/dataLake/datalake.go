@@ -116,24 +116,31 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 	}
 
 	var documents []mongo.WriteModel
+
 	var collectionName string
+
 	var recordsProcessed int64
+
+	// Mak number of columns required per record.
+	var maxColumns = 4
 
 	for {
 		record, err := reader.Read()
 		if err == io.EOF {
 			break
 		}
+
 		if err != nil {
 			return fmt.Errorf("failed to read record from CSV: %w", err)
 		}
 
-		if len(record) < 4 {
+		if len(record) < maxColumns {
 			log.Printf("Skipping invalid record with less than 4 columns in file %s", filePath)
 			continue
 		}
 
 		postingDateStr := record[1]
+
 		parsedDate, err := time.Parse("01/02/2006", postingDateStr)
 		if err != nil {
 			log.Printf("Skipping record with invalid date format '%s': %v", postingDateStr, err)
@@ -143,6 +150,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 		collectionName = fmt.Sprintf("%s-data-%s", dataSource, parsedDate.Format("2006-01-02"))
 
 		amount, _ := strconv.ParseFloat(record[3], 64)
+
 		balance := 0.0
 		if len(record) > 5 {
 			balance, _ = strconv.ParseFloat(record[5], 64)
@@ -171,6 +179,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 	}
 
 	collection := provider.Collection(collectionName)
+
 	result, err := collection.BulkWrite(ctx, documents, options.BulkWrite().SetOrdered(false))
 	if err != nil {
 		return fmt.Errorf("failed to perform bulk write for collection %s: %w", collectionName, err)
@@ -203,6 +212,7 @@ func safeGet(slice []string, index int) string {
 // ConnectToMongoDB establishes a connection to MongoDB.
 func ConnectToMongoDB(ctx context.Context, uri string) (*mongo.Client, error) {
 	clientOptions := options.Client().ApplyURI(uri)
+
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
