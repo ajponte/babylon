@@ -1,5 +1,5 @@
 //nolint:all
-package dataLake
+package datalake
 
 import (
 	"context"

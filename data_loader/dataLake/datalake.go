@@ -1,4 +1,5 @@
-package dataLake
+// Package datalake holds methods for pushing new records to the Babylon data lake.
+package datalake
 
 import (
 	"context"
@@ -56,12 +57,28 @@ type mongoCollection struct {
 	*mongo.Collection
 }
 
-func (c *mongoCollection) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
-	return c.Collection.BulkWrite(ctx, models, opts...)
+func (c *mongoCollection) BulkWrite(
+	ctx context.Context,
+	models []mongo.WriteModel,
+	opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
+	result, err := c.Collection.BulkWrite(ctx, models, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform BulkWrite: %w", err)
+	}
+
+	return result, nil
 }
 
-func (c *mongoCollection) InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
-	return c.Collection.InsertOne(ctx, document, opts...)
+func (c *mongoCollection) InsertOne(
+	ctx context.Context,
+	document interface{},
+	opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
+	result, err := c.Collection.InsertOne(ctx, document, opts...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform InsertOne: %w", err)
+	}
+
+	return result, nil
 }
 
 // mongoProvider adapts *mongo.Client to collectionProvider.
@@ -90,12 +107,16 @@ func IngestCSVFiles(ctx context.Context, client *mongo.Client, dirPath string) e
 			if err != nil {
 				return fmt.Errorf("failed to retrieve data source: %w", err)
 			}
+
 			filePath := filepath.Join(dirPath, file.Name())
-			if err := ProcessCSV(ctx, provider, filePath, externalDataSource); err != nil {
-				log.Printf("Error processing file %s: %v", file.Name(), err)
+
+			err = ProcessCSV(ctx, provider, filePath, externalDataSource)
+			if err != nil {
+				return fmt.Errorf("error processing file %s: %v", file.Name(), err)
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -136,6 +157,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 
 		if len(record) < maxColumns {
 			log.Printf("Skipping invalid record with less than 4 columns in file %s", filePath)
+
 			continue
 		}
 
@@ -144,6 +166,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 		parsedDate, err := time.Parse("01/02/2006", postingDateStr)
 		if err != nil {
 			log.Printf("Skipping record with invalid date format '%s': %v", postingDateStr, err)
+
 			continue
 		}
 
@@ -151,19 +174,25 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 
 		amount, _ := strconv.ParseFloat(record[3], 64)
 
+		var minRecords = 5
+
 		balance := 0.0
-		if len(record) > 5 {
+		if len(record) > minRecords {
 			balance, _ = strconv.ParseFloat(record[5], 64)
 		}
+
+		var typeColumnPos = 4
+
+		var slipNumColumnPos = 6
 
 		doc := Data{
 			Details:        record[0],
 			PostingDate:    postingDateStr,
 			Description:    record[2],
 			Amount:         amount,
-			Type:           safeGet(record, 4),
+			Type:           safeGet(record, typeColumnPos),
 			Balance:        balance,
-			CheckOrSlipNum: safeGet(record, 6),
+			CheckOrSlipNum: safeGet(record, slipNumColumnPos),
 		}
 
 		filter := bson.M{"Details": doc.Details, "PostingDate": doc.PostingDate, "Description": doc.Description}

@@ -1,19 +1,20 @@
+// DataLoader main entry point.
 package main
 
 import (
+	datalake "babylon/data_loader/datalake"
 	"context"
 	"log"
 	"os"
 	"time"
-
-	"babylon/data_loader/dataLake"
 )
 
 const (
-	defaultMongoURI = "mongodb://localhost:27017"
-	defaultCSVDir   = "./data"
-	envMongoURI     = "MONGO_URI"
-	envCSVDirectory = "CSV_DIR"
+	defaultTimeoutSeconds = 30
+	defaultMongoURI       = "mongodb://localhost:27017"
+	defaultCSVDir         = "./data"
+	envMongoURI           = "MONGO_URI"
+	envCSVDirectory       = "CSV_DIR"
 )
 
 func main() {
@@ -29,15 +30,15 @@ func main() {
 		log.Printf("CSV directory not found in environment variable '%s', using default: %s", envCSVDirectory, defaultCSVDir)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
 	defer cancel()
 
 	if _, err := os.Stat(csvDirectory); os.IsNotExist(err) {
 		log.Fatalf("Error: The directory '%s' does not exist. Please create it and place your CSV files inside.", csvDirectory)
 	}
 
-	// Call the function from the dataLake package
-	client, err := dataLake.ConnectToMongoDB(ctx, mongoURI)
+	// Call the function from the datalake package
+	client, err := datalake.ConnectToMongoDB(ctx, mongoURI)
 	if err != nil {
 		log.Fatalf("Failed to connect to MongoDB: %v", err)
 	}
@@ -50,8 +51,8 @@ func main() {
 
 	log.Println("Successfully connected to MongoDB.")
 
-	// Call the function from the dataLake package
-	err = dataLake.IngestCSVFiles(ctx, client, csvDirectory)
+	// Call the function from the datalake package
+	err = datalake.IngestCSVFiles(ctx, client, csvDirectory)
 	if err != nil {
 		log.Fatalf("Error ingesting CSV files: %v", err)
 	}

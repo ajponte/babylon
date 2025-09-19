@@ -1,4 +1,6 @@
-package apiClient
+// Package apiclient to provide methods to send HTTP requests
+// to babylon server.
+package apiclient
 
 import (
 	"bytes"
@@ -8,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 )
 
 const (
@@ -18,7 +21,7 @@ const (
 // APIClient manages all endpoints of the Babylon API.
 type APIClient struct {
 	// a pointer to the http client to use.
-	HttpClient *http.Client
+	HTTPClient *http.Client
 	// a pointer to the url to be used as a base url for all requests.
 	BasePath *url.URL
 }
@@ -31,32 +34,33 @@ func NewAPIClient(httpClient *http.Client, basePath string) (*APIClient, error) 
 	}
 
 	// Parse the base path URL.
-	basePathUrl, err := url.Parse(basePath)
+	basePathURL, err := url.Parse(basePath)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to format base path %s, error: %s", basePath, err)
 	}
 
 	// Return a new APIClient instance.
 	return &APIClient{
-		HttpClient: httpClient,
-		BasePath:   basePathUrl,
+		HTTPClient: httpClient,
+		BasePath:   basePathURL,
 	}, nil
 }
 
-// Echo represents the response from the Echo endpoint.
+// EchoResponse represents the response from the Echo endpoint.
 type EchoResponse struct {
 	// The value that was echoed back.
-	EchoedValue string `json:"echoed_value,omitempty"`
+	EchoedValue string `json:"value,omitempty"`
 }
 
 // HistoryTransaction represents a transaction in the history.
 type HistoryTransaction struct {
 	// A unique identifier for a transaction.
-	Id string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 }
 
+// TransactionPutResponse response body from PUT `/transaction/.`
 type TransactionPutResponse struct {
-	TransactionId string `json:"transactionId"`
+	TransactionID string `json:"transactionId"`
 }
 
 // Transaction represents a single transaction.
@@ -87,7 +91,7 @@ type DebugMessageResponse struct {
 	Message string `json:"message,omitempty"`
 }
 
-// TransactionHistoryResponse is a list of transactions.
+// TransactionHistorySearchResponse is a list of transactions.
 type TransactionHistorySearchResponse struct {
 	Transactions []HistoryTransaction `json:"transactions,omitempty"`
 }
@@ -112,48 +116,50 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 	req.Header.Add("Content-Type", "application/json")
 
 	// Send the request.
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Handle response based on status code.
-	if resp.StatusCode == http.StatusOK {
-		var result EchoResponse
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return resp, nil, fmt.Errorf("error reading response body: %w", err)
-		}
-		if err = json.Unmarshal(body, &result); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
-		}
-		return resp, &result, nil
-	} else if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusInternalServerError {
+	// Handle error status codes first.
+	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusInternalServerError {
 		var debugMsg DebugMessageResponse
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
-		}
-		if err = json.Unmarshal(body, &debugMsg); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling error response body: %w", err)
-		}
+		// ... (error handling code) ...
 		return resp, nil, fmt.Errorf("API error: %s", debugMsg.Message)
 	}
+	// Handle unexpected status codes.
+	if resp.StatusCode != http.StatusOK {
+		return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 
-	return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	// Now handle the successful case (happy path).
+	var result EchoResponse
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
+	}
+
+	return resp, &result, nil
 }
 
-// GetTransactionById sends a GET request to the /history/transaction endpoint.
-func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string, transactionType string) (*http.Response, *HistoryTransaction, error) {
+// GetTransactionByID sends a GET request to the /history/transaction endpoint.
+func (c *APIClient) GetTransactionByID(
+	ctx context.Context,
+	transactionID string,
+	transactionType string) (*http.Response, *HistoryTransaction, error) {
 	// Use ResolveReference to correctly combine the base URL with the endpoint path.
 	localVarPath := c.BasePath.ResolveReference(&url.URL{Path: "/history/transaction"})
 
 	// Add query parameters.
 	q := url.Values{}
-	q.Add("transactionId", transactionId)
+	q.Add("transactionId", transactionID)
 	q.Add("transactionType", transactionType)
 	localVarPath.RawQuery = q.Encode()
 
@@ -167,7 +173,7 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 	req.Header.Add("Content-Type", "application/json")
 
 	// Send the request.
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -185,8 +191,9 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
 		}
 		return resp, &result, nil
-	} else if resp.StatusCode >= 400 {
+	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
+
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
@@ -201,7 +208,9 @@ func (c *APIClient) GetTransactionById(ctx context.Context, transactionId string
 }
 
 // AddTransaction sends a PUT request to the /history/transaction endpoint.
-func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction) (*http.Response, *TransactionPutResponse, error) {
+func (c *APIClient) AddTransaction(
+	ctx context.Context,
+	transaction Transaction) (*http.Response, *TransactionPutResponse, error) {
 	// Marshal the request body.
 	bodyBytes, err := json.Marshal(transaction)
 	if err != nil {
@@ -221,7 +230,7 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 	req.Header.Add("Content-Type", "application/json")
 
 	// Send the request.
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -239,7 +248,7 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
 		}
 		return resp, &result, nil
-	} else if resp.StatusCode >= 400 {
+	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
 
 		body, err := io.ReadAll(resp.Body)
@@ -257,14 +266,18 @@ func (c *APIClient) AddTransaction(ctx context.Context, transaction Transaction)
 }
 
 // GetTransactionHistory sends a GET request to the /history/transactions/{transactionType} endpoint.
-func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType string, start, end int64) (*http.Response, *TransactionHistorySearchResponse, error) {
+func (c *APIClient) GetTransactionHistory(
+	ctx context.Context,
+	transactionType string,
+	start,
+	end int64) (*http.Response, *TransactionHistorySearchResponse, error) {
 	// Use ResolveReference to correctly combine the base URL with the endpoint path.
 	localVarPath := c.BasePath.ResolveReference(&url.URL{Path: "/history/transactions/" + url.PathEscape(transactionType)})
 
 	// Add query parameters.
 	q := url.Values{}
-	q.Add("start", fmt.Sprintf("%d", start))
-	q.Add("end", fmt.Sprintf("%d", end))
+	q.Add("start", strconv.FormatInt(start, 10))
+	q.Add("end", strconv.FormatInt(end, 10))
 	localVarPath.RawQuery = q.Encode()
 
 	// Create the request.
@@ -277,7 +290,7 @@ func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType s
 	req.Header.Add("Content-Type", "application/json")
 
 	// Send the request.
-	resp, err := c.HttpClient.Do(req)
+	resp, err := c.HTTPClient.Do(req)
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
@@ -288,7 +301,6 @@ func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType s
 		var result TransactionHistorySearchResponse
 
 		body, err := io.ReadAll(resp.Body)
-
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body: %w", err)
 		}
@@ -297,7 +309,7 @@ func (c *APIClient) GetTransactionHistory(ctx context.Context, transactionType s
 			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
 		}
 		return resp, &result, nil
-	} else if resp.StatusCode >= 400 {
+	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
 
 		body, err := io.ReadAll(resp.Body)
