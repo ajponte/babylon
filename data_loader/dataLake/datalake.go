@@ -17,8 +17,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// The rest of the code remains the same as previously provided.
-
 // Data represents a single row from the CSV file.
 type Data struct {
 	Details        string  `bson:"Details"`
@@ -38,29 +36,62 @@ type SyncLog struct {
 }
 
 const (
-	// Database and collection names
 	dbName        = "babylonDataLake"
 	syncTableName = "dataSync"
 )
 
+// ---- Abstractions for Testability ----
+
+type dataStore interface {
+	BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error)
+	InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
+}
+
+type collectionProvider interface {
+	Collection(name string) dataStore
+}
+
+// mongoCollection adapts *mongo.Collection to dataStore.
+type mongoCollection struct {
+	*mongo.Collection
+}
+
+func (c *mongoCollection) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
+	return c.Collection.BulkWrite(ctx, models, opts...)
+}
+
+func (c *mongoCollection) InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
+	return c.Collection.InsertOne(ctx, document, opts...)
+}
+
+// mongoProvider adapts *mongo.Client to collectionProvider.
+type mongoProvider struct {
+	client *mongo.Client
+}
+
+func (p *mongoProvider) Collection(name string) dataStore {
+	return &mongoCollection{p.client.Database(dbName).Collection(name)}
+}
+
+// ---- Core Logic ----
+
 // IngestCSVFiles processes all CSV files in a given directory and uploads them to MongoDB.
-func IngestCSVFiles(ctx context.Context, mongoClient *mongo.Client, dirPath string) error {
-	// Loop through all files in the directory
-	var externalDataSource string
+func IngestCSVFiles(ctx context.Context, client *mongo.Client, dirPath string) error {
 	files, err := os.ReadDir(dirPath)
 	if err != nil {
 		return fmt.Errorf("failed to read directory: %w", err)
 	}
 
+	provider := &mongoProvider{client: client}
+
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".csv") {
-			var fileName = file.Name()
-			externalDataSource, err = dataSource(fileName)
+			externalDataSource, err := dataSource(file.Name())
 			if err != nil {
-				return fmt.Errorf("failed to retrieve data source")
+				return fmt.Errorf("failed to retrieve data source: %w", err)
 			}
 			filePath := filepath.Join(dirPath, file.Name())
-			if err := processCSV(ctx, mongoClient, filePath, externalDataSource); err != nil {
+			if err := ProcessCSV(ctx, provider, filePath, externalDataSource); err != nil {
 				log.Printf("Error processing file %s: %v", file.Name(), err)
 			}
 		}
@@ -68,7 +99,8 @@ func IngestCSVFiles(ctx context.Context, mongoClient *mongo.Client, dirPath stri
 	return nil
 }
 
-func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string, dataSource string) error {
+// ProcessCSV reads a CSV file from a given path and uploads the data to MongoDB.
+func ProcessCSV(ctx context.Context, provider collectionProvider, filePath string, dataSource string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", filePath, err)
@@ -76,16 +108,14 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	reader.FieldsPerRecord = -1 // Allow for a variable number of fields
+	reader.FieldsPerRecord = -1
 
-	// Read the header row
-	_, err = reader.Read()
-	if err != nil {
+	// Skip header
+	if _, err = reader.Read(); err != nil {
 		return fmt.Errorf("failed to read CSV header: %w", err)
 	}
 
 	var documents []mongo.WriteModel
-	var postingDateStr string
 	var collectionName string
 	var recordsProcessed int64
 
@@ -98,17 +128,12 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 			return fmt.Errorf("failed to read record from CSV: %w", err)
 		}
 
-		// The following are the required fields based on your description.
-		const requiredFields = 4 // posting date, description, amount, and at least details to check for consistency
-
-		// Ensure the record has at least the minimum required fields.
-		if len(record) < requiredFields {
-			log.Printf("Skipping invalid record with less than %d columns in file %s", requiredFields, filePath)
+		if len(record) < 4 {
+			log.Printf("Skipping invalid record with less than 4 columns in file %s", filePath)
 			continue
 		}
 
-		// Parse the date
-		postingDateStr = record[1]
+		postingDateStr := record[1]
 		parsedDate, err := time.Parse("01/02/2006", postingDateStr)
 		if err != nil {
 			log.Printf("Skipping record with invalid date format '%s': %v", postingDateStr, err)
@@ -117,23 +142,10 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 
 		collectionName = fmt.Sprintf("%s-data-%s", dataSource, parsedDate.Format("2006-01-02"))
 
-		// Parse amount and balance as float64, with a safeguard for missing fields.
-		var amount float64
-		if len(record) > 3 {
-			amount, err = strconv.ParseFloat(record[3], 64)
-			if err != nil {
-				log.Printf("Skipping record with invalid amount '%s': %v", record[3], err)
-				continue
-			}
-		}
-
-		var balance float64
+		amount, _ := strconv.ParseFloat(record[3], 64)
+		balance := 0.0
 		if len(record) > 5 {
-			balance, err = strconv.ParseFloat(record[5], 64)
-			if err != nil {
-				log.Printf("Skipping record with invalid balance '%s': %v", record[5], err)
-				continue
-			}
+			balance, _ = strconv.ParseFloat(record[5], 64)
 		}
 
 		doc := Data{
@@ -146,13 +158,10 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 			CheckOrSlipNum: safeGet(record, 6),
 		}
 
-		// Create upsert model for the document
 		filter := bson.M{"Details": doc.Details, "PostingDate": doc.PostingDate, "Description": doc.Description}
 		update := bson.M{"$set": doc}
-		upsertModel := mongo.NewUpdateOneModel().
-			SetFilter(filter).
-			SetUpdate(update).
-			SetUpsert(true)
+		upsertModel := mongo.NewUpdateOneModel().SetFilter(filter).SetUpdate(update).SetUpsert(true)
+
 		documents = append(documents, upsertModel)
 		recordsProcessed++
 	}
@@ -161,9 +170,7 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 		return fmt.Errorf("no valid documents found in file %s", filePath)
 	}
 
-	collection := mongoClient.Database(dbName).Collection(collectionName)
-
-	// Upsert the documents in bulk
+	collection := provider.Collection(collectionName)
 	result, err := collection.BulkWrite(ctx, documents, options.BulkWrite().SetOrdered(false))
 	if err != nil {
 		return fmt.Errorf("failed to perform bulk write for collection %s: %w", collectionName, err)
@@ -171,23 +178,21 @@ func processCSV(ctx context.Context, mongoClient *mongo.Client, filePath string,
 
 	log.Printf("Successfully upserted %d documents into collection '%s'.", result.UpsertedCount, collectionName)
 
-	// Insert sync log entry
-	syncCollection := mongoClient.Database(dbName).Collection(syncTableName)
+	syncCollection := provider.Collection(syncTableName)
 	syncLog := SyncLog{
 		CollectionName:  collectionName,
 		SyncTimestamp:   time.Now(),
-		RecordsUploaded: recordsProcessed, // Use the total number of records processed
+		RecordsUploaded: recordsProcessed,
 	}
 
-	_, err = syncCollection.InsertOne(ctx, syncLog)
-	if err != nil {
+	if _, err = syncCollection.InsertOne(ctx, syncLog); err != nil {
 		return fmt.Errorf("failed to insert into dataSync collection: %w", err)
 	}
 
 	return nil
 }
 
-// safeGet safely retrieves a string from a slice at a given index, returning an empty string if the index is out of bounds.
+// safeGet retrieves slice[index] safely.
 func safeGet(slice []string, index int) string {
 	if index < len(slice) {
 		return slice[index]
@@ -195,29 +200,22 @@ func safeGet(slice []string, index int) string {
 	return ""
 }
 
-// ConnectToMongoDB establishes a connection to the MongoDB database.
+// ConnectToMongoDB establishes a connection to MongoDB.
 func ConnectToMongoDB(ctx context.Context, uri string) (*mongo.Client, error) {
 	clientOptions := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
-
-	// Ping the database to verify connection
-	err = client.Ping(ctx, nil)
-	if err != nil {
+	if err = client.Ping(ctx, nil); err != nil {
 		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
-
 	return client, nil
 }
 
-func dataSource(dataSourceFileName string) (string, error) {
-	var parsedName string
-	if strings.ContainsAny(strings.ToLower(dataSourceFileName), "chase") {
-		parsedName = "chase"
-	} else {
-		return "", fmt.Errorf("unable to find a relevant data source for the CSV filename: %s", dataSourceFileName)
+func dataSource(fileName string) (string, error) {
+	if strings.Contains(strings.ToLower(fileName), "chase") {
+		return "chase", nil
 	}
-	return parsedName, nil
+	return "", fmt.Errorf("unable to find a relevant data source for the CSV filename: %s", fileName)
 }
