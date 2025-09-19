@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,12 +19,40 @@ const (
 	DefaultBasePath = "/api"
 )
 
+// httpUnexpectedStatusCodeError is a custom error.
+var errHTTPUnexpectedStatusCode = errors.New("unexpected http status code")
+var errHTTPBasePathFormatting = errors.New("error formatting HTTP base path")
+var errHTTPBodyUnmarshall = errors.New("errror unmarshalling HTTP response body")
+var errHTTPBodyClose = errors.New("error closing io stream for HTTP response body")
+var errHTTPBabylonAPI = errors.New("error returned from babylon api")
+
 // APIClient manages all endpoints of the Babylon API.
 type APIClient struct {
 	// a pointer to the http client to use.
 	HTTPClient *http.Client
 	// a pointer to the url to be used as a base url for all requests.
 	BasePath *url.URL
+}
+
+// HTTPUnexpectedStatusCodeError is a error wrapper.
+func HTTPUnexpectedStatusCodeError(statusCode int) error {
+	return fmt.Errorf("%w, %d", errHTTPUnexpectedStatusCode, statusCode)
+}
+
+func HTPBasePathFormattingError(basePath string) error {
+	return fmt.Errorf("%w, %s", errHTTPBasePathFormatting, basePath)
+}
+
+func HTTPBodyUnmarshallError(baseErr error) error {
+	return fmt.Errorf("%w, %w", errHTTPBodyUnmarshall, baseErr)
+}
+
+func HTTPBodyCloseError(baseErr error) error {
+	return fmt.Errorf("%w, %w", errHTTPBodyClose, baseErr)
+}
+
+func HTTPBabylonAPI(errorMsg string) error {
+	return fmt.Errorf("%w, %s", errHTTPBabylonAPI, errorMsg)
 }
 
 // NewAPIClient creates a new APIClient.
@@ -36,7 +65,7 @@ func NewAPIClient(httpClient *http.Client, basePath string) (*APIClient, error) 
 	// Parse the base path URL.
 	basePathURL, err := url.Parse(basePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to format base path %s, error: %s", basePath, err)
+		return nil, HTPBasePathFormattingError(basePath)
 	}
 
 	// Return a new APIClient instance.
@@ -58,7 +87,7 @@ type HistoryTransaction struct {
 	ID string `json:"id,omitempty"`
 }
 
-// TransactionPutResponse response body from PUT `/transaction/.`
+// TransactionPutResponse response body from PUT transaction.
 type TransactionPutResponse struct {
 	TransactionID string `json:"transactionId"`
 }
@@ -120,17 +149,21 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
-	defer resp.Body.Close()
+
+	err = resp.Body.Close()
+	if err != nil {
+		return resp, nil, HTTPBodyUnmarshallError(err)
+	}
 
 	// Handle error status codes first.
 	if resp.StatusCode == http.StatusBadRequest || resp.StatusCode == http.StatusInternalServerError {
 		var debugMsg DebugMessageResponse
 		// ... (error handling code) ...
-		return resp, nil, fmt.Errorf("API error: %s", debugMsg.Message)
+		return resp, nil, HTTPBabylonAPI(debugMsg.Message)
 	}
 	// Handle unexpected status codes.
 	if resp.StatusCode != http.StatusOK {
-		return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return resp, nil, HTTPUnexpectedStatusCodeError(resp.StatusCode)
 	}
 
 	// Now handle the successful case (happy path).
@@ -143,7 +176,7 @@ func (c *APIClient) DoEcho(ctx context.Context, inputVal string) (*http.Response
 
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
+		return resp, nil, HTTPBodyUnmarshallError(err)
 	}
 
 	return resp, &result, nil
@@ -177,34 +210,33 @@ func (c *APIClient) GetTransactionByID(
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
-	defer resp.Body.Close()
+
+	err = resp.Body.Close()
+	if err != nil {
+		return resp, nil, fmt.Errorf("error closing IO stream for http body: %w", err)
+	}
 
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusOK {
-		var result HistoryTransaction
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return resp, nil, fmt.Errorf("error reading response body: %w", err)
-		}
-		if err = json.Unmarshal(body, &result); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
-		}
-		return resp, &result, nil
+		return historyTransactionGetResponseUnmarshall(resp)
 	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
 
+		//nolint:govet // For now its fine to redeclare the err. We return it back either way.
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
 		}
-		if err = json.Unmarshal(body, &debugMsg); err != nil {
+
+		err = json.Unmarshal(body, &debugMsg)
+		if err != nil {
 			return resp, nil, fmt.Errorf("error unmarshaling error response body: %w", err)
 		}
-		return resp, nil, fmt.Errorf("API error: %s", debugMsg.Message)
+
+		return resp, nil, HTTPBabylonAPI(debugMsg.Message)
 	}
 
-	return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	return resp, nil, HTTPUnexpectedStatusCodeError(resp.StatusCode)
 }
 
 // AddTransaction sends a PUT request to the /history/transaction endpoint.
@@ -234,35 +266,35 @@ func (c *APIClient) AddTransaction(
 	if err != nil {
 		return resp, nil, fmt.Errorf("error sending request: %w", err)
 	}
+
+	err = resp.Body.Close()
+	if err != nil {
+		return resp, nil, HTTPBodyCloseError(err)
+	}
+
 	defer resp.Body.Close()
 
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusCreated {
-		var result TransactionPutResponse
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return resp, nil, fmt.Errorf("error reading response body: %w", err)
-		}
-		if err = json.Unmarshal(body, &result); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
-		}
-		return resp, &result, nil
+		return transactionPutResponseUnmarshall(resp)
 	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
 
+		//nolint:govet // For now its fine to redeclare the err. We return it back either way.
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
 		}
 
-		if err = json.Unmarshal(body, &debugMsg); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling error response body: %w", err)
+		err = json.Unmarshal(body, &debugMsg)
+		if err != nil {
+			return resp, nil, HTTPBodyUnmarshallError(err)
 		}
-		return resp, nil, fmt.Errorf("API error: %s", debugMsg.Message)
+
+		return resp, nil, HTTPBabylonAPI(debugMsg.Message)
 	}
 
-	return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	return resp, nil, HTTPUnexpectedStatusCodeError(resp.StatusCode)
 }
 
 // GetTransactionHistory sends a GET request to the /history/transactions/{transactionType} endpoint.
@@ -298,29 +330,80 @@ func (c *APIClient) GetTransactionHistory(
 
 	// Handle response based on status code.
 	if resp.StatusCode == http.StatusOK {
-		var result TransactionHistorySearchResponse
-
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return resp, nil, fmt.Errorf("error reading response body: %w", err)
-		}
-
-		if err = json.Unmarshal(body, &result); err != nil {
-			return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
-		}
-		return resp, &result, nil
+		return historySearchResponseUnmarshall(resp)
 	} else if resp.StatusCode >= http.StatusBadRequest {
 		var debugMsg DebugMessageResponse
 
+		//nolint:govet // For now its fine to redeclare the err. We return it back either way.
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return resp, nil, fmt.Errorf("error reading response body for error: %w", err)
 		}
-		if err = json.Unmarshal(body, &debugMsg); err != nil {
+
+		err = json.Unmarshal(body, &debugMsg)
+		if err != nil {
 			return resp, nil, fmt.Errorf("error unmarshaling error response body: %w", err)
 		}
-		return resp, nil, fmt.Errorf("API error: %s", debugMsg.Message)
+
+		return resp, nil, HTTPBabylonAPI(debugMsg.Message)
 	}
 
-	return resp, nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	return resp, nil, HTTPUnexpectedStatusCodeError(resp.StatusCode)
+}
+
+// historySearchResponseUnmarshall validates the http response and unmarshalls the result.
+// Return an error if one exists.
+func historySearchResponseUnmarshall(
+	resp *http.Response) (*http.Response, *TransactionHistorySearchResponse, error) {
+	var result TransactionHistorySearchResponse
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
+	}
+
+	return resp, &result, nil
+}
+
+// transactionPutResponseUnmarshall validates the http response and unmarshalls the result.
+// Return an error if one exists.
+func transactionPutResponseUnmarshall(
+	resp *http.Response) (*http.Response, *TransactionPutResponse, error) {
+	var result TransactionPutResponse
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
+	}
+
+	return resp, &result, nil
+}
+
+// historyTransactionGetResponseUnmarshall validates the http response and unmarshalls the result.
+// Return an error if one exists.
+func historyTransactionGetResponseUnmarshall(
+	resp *http.Response) (*http.Response, *HistoryTransaction, error) {
+	var result HistoryTransaction
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error reading response body: %w", err)
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return resp, nil, fmt.Errorf("error unmarshaling response body: %w", err)
+	}
+
+	return resp, &result, nil
 }

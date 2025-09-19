@@ -21,6 +21,7 @@ func main() {
 	mongoURI := os.Getenv(envMongoURI)
 	if mongoURI == "" {
 		mongoURI = defaultMongoURI
+		//nolint:golines // we just want to print the string.
 		log.Printf("MongoDB URI not found in environment variable '%s', using default: %s", envMongoURI, defaultMongoURI)
 	}
 
@@ -33,7 +34,9 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
 	defer cancel()
 
-	if _, err := os.Stat(csvDirectory); os.IsNotExist(err) {
+	_, err := os.Stat(csvDirectory)
+
+	if err != nil || os.IsNotExist(err) {
 		log.Fatalf("Error: The directory '%s' does not exist. Please create it and place your CSV files inside.", csvDirectory)
 	}
 
@@ -44,7 +47,8 @@ func main() {
 	}
 
 	defer func() {
-		if err = client.Disconnect(ctx); err != nil {
+		err = client.Disconnect(ctx)
+		if err != nil {
 			log.Fatalf("Error disconnecting from MongoDB: %v", err)
 		}
 	}()

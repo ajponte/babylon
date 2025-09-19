@@ -4,6 +4,7 @@ package datalake
 import (
 	"context"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -41,11 +42,28 @@ const (
 	syncTableName = "dataSync"
 )
 
+var errTargetFileNotFound = errors.New("the valid target file was found")
+var errInvalidDataSource = errors.New("data source is not valid")
+
+func ValidFileNotFoundError(path string) error {
+	return fmt.Errorf("%w, %s", errTargetFileNotFound, path)
+}
+
+func DataSourceParseError(dataSource string) error {
+	return fmt.Errorf("%w, %s", errInvalidDataSource, dataSource)
+}
+
 // ---- Abstractions for Testability ----
 
 type dataStore interface {
-	BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error)
-	InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
+	BulkWrite(
+		ctx context.Context,
+		models []mongo.WriteModel,
+		opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error)
+	InsertOne(
+		ctx context.Context,
+		document interface{},
+		opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error)
 }
 
 type collectionProvider interface {
@@ -86,6 +104,7 @@ type mongoProvider struct {
 	client *mongo.Client
 }
 
+//nolint:ireturn // mongoCollection is fine to return for now.
 func (p *mongoProvider) Collection(name string) dataStore {
 	return &mongoCollection{p.client.Database(dbName).Collection(name)}
 }
@@ -103,12 +122,21 @@ func IngestCSVFiles(ctx context.Context, client *mongo.Client, dirPath string) e
 
 	for _, file := range files {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".csv") {
+			//nolint:govet // We want to stay in the file.
 			externalDataSource, err := dataSource(file.Name())
 			if err != nil {
 				return fmt.Errorf("failed to retrieve data source: %w", err)
 			}
 
-			filePath := filepath.Join(dirPath, file.Name())
+			// Sanitize the file name to prevent directory traversal attacks
+			cleanFileName := filepath.Clean(file.Name())
+
+			// Optional: Ensure the path is not attempting to go up the directory tree
+			if strings.HasPrefix(cleanFileName, "../") {
+				return fmt.Errorf("invalid file path provided: %s", file.Name())
+			}
+
+			filePath := filepath.Join(dirPath, cleanFileName)
 
 			err = ProcessCSV(ctx, provider, filePath, externalDataSource)
 			if err != nil {
@@ -132,7 +160,8 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 	reader.FieldsPerRecord = -1
 
 	// Skip header
-	if _, err = reader.Read(); err != nil {
+	_, err = reader.Read()
+	if err != nil {
 		return fmt.Errorf("failed to read CSV header: %w", err)
 	}
 
@@ -146,7 +175,9 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 	var maxColumns = 4
 
 	for {
+		//nolint:govet // We want to stay in the file.
 		record, err := reader.Read()
+		//nolint:errorlint // We want to continue if we've reached to the end of a file.
 		if err == io.EOF {
 			break
 		}
@@ -204,7 +235,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 	}
 
 	if len(documents) == 0 {
-		return fmt.Errorf("no valid documents found in file %s", filePath)
+		return ValidFileNotFoundError(filePath)
 	}
 
 	collection := provider.Collection(collectionName)
@@ -223,7 +254,8 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 		RecordsUploaded: recordsProcessed,
 	}
 
-	if _, err = syncCollection.InsertOne(ctx, syncLog); err != nil {
+	_, err = syncCollection.InsertOne(ctx, syncLog)
+	if err != nil {
 		return fmt.Errorf("failed to insert into dataSync collection: %w", err)
 	}
 
@@ -235,6 +267,7 @@ func safeGet(slice []string, index int) string {
 	if index < len(slice) {
 		return slice[index]
 	}
+
 	return ""
 }
 
@@ -246,9 +279,12 @@ func ConnectToMongoDB(ctx context.Context, uri string) (*mongo.Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
-	if err = client.Ping(ctx, nil); err != nil {
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
 		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
+
 	return client, nil
 }
 
@@ -256,5 +292,6 @@ func dataSource(fileName string) (string, error) {
 	if strings.Contains(strings.ToLower(fileName), "chase") {
 		return "chase", nil
 	}
-	return "", fmt.Errorf("unable to find a relevant data source for the CSV filename: %s", fileName)
+
+	return "", DataSourceParseError(fileName)
 }

@@ -1,4 +1,3 @@
-//nolint:all
 package datalake
 
 import (
@@ -19,13 +18,21 @@ type mockCollection struct {
 	insertOneCalled bool
 }
 
-func (m *mockCollection) BulkWrite(ctx context.Context, models []mongo.WriteModel, opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
+func (m *mockCollection) BulkWrite(
+	ctx context.Context,
+	models []mongo.WriteModel,
+	opts ...*options.BulkWriteOptions) (*mongo.BulkWriteResult, error) {
 	m.bulkWriteCalled = true
+
 	return &mongo.BulkWriteResult{UpsertedCount: int64(len(models))}, nil
 }
 
-func (m *mockCollection) InsertOne(ctx context.Context, document interface{}, opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
+func (m *mockCollection) InsertOne(
+	ctx context.Context,
+	document interface{},
+	opts ...*options.InsertOneOptions) (*mongo.InsertOneResult, error) {
 	m.insertOneCalled = true
+
 	return &mongo.InsertOneResult{}, nil
 }
 
@@ -65,6 +72,7 @@ DEBIT,01/31/2023,"WHOLEFDS HAR 102 230 B OAKLAND CA    211023  01/31",-75.77,DEB
 	if !mockCol.bulkWriteCalled {
 		t.Errorf("expected BulkWrite to be called at least once, but it wasn't")
 	}
+
 	if !mockCol.insertOneCalled {
 		t.Errorf("expected InsertOne to be called at least once, but it wasn't")
 	}
@@ -95,6 +103,7 @@ func TestProcessCSV_NoValidRecords(t *testing.T) {
 	if mockCol.bulkWriteCalled {
 		t.Errorf("expected BulkWrite not to be called, but it was")
 	}
+
 	if mockCol.insertOneCalled {
 		t.Errorf("expected InsertOne not to be called, but it was")
 	}
