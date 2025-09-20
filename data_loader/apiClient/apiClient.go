@@ -304,7 +304,8 @@ func (c *APIClient) GetTransactionHistory(
 	start,
 	end int64) (*http.Response, *TransactionHistorySearchResponse, error) {
 	// Use ResolveReference to correctly combine the base URL with the endpoint path.
-	localVarPath := c.BasePath.ResolveReference(&url.URL{Path: "/history/transactions/" + url.PathEscape(transactionType)})
+	localVarPath := c.BasePath.ResolveReference(
+		&url.URL{Path: "/history/transactions/" + url.PathEscape(transactionType)})
 
 	// Add query parameters.
 	q := url.Values{}

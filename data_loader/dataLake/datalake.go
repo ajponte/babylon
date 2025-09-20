@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -44,6 +44,7 @@ const (
 
 var errTargetFileNotFound = errors.New("the valid target file was found")
 var errInvalidDataSource = errors.New("data source is not valid")
+var errProcessCsv = errors.New("error while parsing CSV file")
 
 func ValidFileNotFoundError(path string) error {
 	return fmt.Errorf("%w, %s", errTargetFileNotFound, path)
@@ -51,6 +52,10 @@ func ValidFileNotFoundError(path string) error {
 
 func DataSourceParseError(dataSource string) error {
 	return fmt.Errorf("%w, %s", errInvalidDataSource, dataSource)
+}
+
+func ProcessCsvError(filename string) error {
+	return fmt.Errorf("%s, %w", filename, errProcessCsv)
 }
 
 // ---- Abstractions for Testability ----
@@ -104,7 +109,6 @@ type mongoProvider struct {
 	client *mongo.Client
 }
 
-//nolint:ireturn // mongoCollection is fine to return for now.
 func (p *mongoProvider) Collection(name string) dataStore {
 	return &mongoCollection{p.client.Database(dbName).Collection(name)}
 }
@@ -133,14 +137,14 @@ func IngestCSVFiles(ctx context.Context, client *mongo.Client, dirPath string) e
 
 			// Optional: Ensure the path is not attempting to go up the directory tree
 			if strings.HasPrefix(cleanFileName, "../") {
-				return fmt.Errorf("invalid file path provided: %s", file.Name())
+				return ValidFileNotFoundError(file.Name())
 			}
 
 			filePath := filepath.Join(dirPath, cleanFileName)
 
 			err = ProcessCSV(ctx, provider, filePath, externalDataSource)
 			if err != nil {
-				return fmt.Errorf("error processing file %s: %v", file.Name(), err)
+				return ProcessCsvError(file.Name())
 			}
 		}
 	}
@@ -149,7 +153,12 @@ func IngestCSVFiles(ctx context.Context, client *mongo.Client, dirPath string) e
 }
 
 // ProcessCSV reads a CSV file from a given path and uploads the data to MongoDB.
+//
+//nolint:funlen // refactor this later
 func ProcessCSV(ctx context.Context, provider collectionProvider, filePath string, dataSource string) error {
+	// Retrieve the logger from the context at the start of the function.
+	logger := LoggerFromContext(ctx)
+
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", filePath, err)
@@ -187,7 +196,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 		}
 
 		if len(record) < maxColumns {
-			log.Printf("Skipping invalid record with less than 4 columns in file %s", filePath)
+			logger.WarnContext(ctx, "Skipping invalid record", "reason", "less than 4 columns", "file", filePath)
 
 			continue
 		}
@@ -196,7 +205,7 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 
 		parsedDate, err := time.Parse("01/02/2006", postingDateStr)
 		if err != nil {
-			log.Printf("Skipping record with invalid date format '%s': %v", postingDateStr, err)
+			logger.WarnContext(ctx, "skipping record with invalid date format '%s': %v", postingDateStr, err)
 
 			continue
 		}
@@ -245,7 +254,12 @@ func ProcessCSV(ctx context.Context, provider collectionProvider, filePath strin
 		return fmt.Errorf("failed to perform bulk write for collection %s: %w", collectionName, err)
 	}
 
-	log.Printf("Successfully upserted %d documents into collection '%s'.", result.UpsertedCount, collectionName)
+	logger.InfoContext(
+		ctx,
+		"Successfully upserted documents into collection.",
+		slog.Int("upsertedCount", int(result.UpsertedCount)),
+		slog.String("collectionName", collectionName),
+	)
 
 	syncCollection := provider.Collection(syncTableName)
 	syncLog := SyncLog{

@@ -1,10 +1,10 @@
-// DataLoader main entry point.
+// main.go
 package main
 
 import (
 	datalake "babylon/data_loader/datalake"
 	"context"
-	"log"
+	"log/slog" // Change this import from "log" to "log/slog"
 	"os"
 	"time"
 )
@@ -18,48 +18,66 @@ const (
 )
 
 func main() {
+	// 1. Create a logger at the main entry point
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	// Create a new context and inject the logger into it
+	ctx, cancel := context.WithTimeout(
+		datalake.WithLogger(context.Background(), logger),
+		defaultTimeoutSeconds*time.Second,
+	)
+	defer cancel()
+
 	mongoURI := os.Getenv(envMongoURI)
 	if mongoURI == "" {
 		mongoURI = defaultMongoURI
-		//nolint:golines // we just want to print the string.
-		log.Printf("MongoDB URI not found in environment variable '%s', using default: %s", envMongoURI, defaultMongoURI)
+		logger.Info(
+			"MongoDB URI not found in environment variable, using default",
+			"env_var", envMongoURI,
+			"uri", defaultMongoURI,
+		)
 	}
 
 	csvDirectory := os.Getenv(envCSVDirectory)
 	if csvDirectory == "" {
 		csvDirectory = defaultCSVDir
-		log.Printf("CSV directory not found in environment variable '%s', using default: %s", envCSVDirectory, defaultCSVDir)
+		logger.Info(
+			"CSV directory not found in environment variable, using default",
+			"env_var", envCSVDirectory,
+			"dir", defaultCSVDir,
+		)
 	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeoutSeconds*time.Second)
-	defer cancel()
 
 	_, err := os.Stat(csvDirectory)
-
 	if err != nil || os.IsNotExist(err) {
-		log.Fatalf("Error: The directory '%s' does not exist. Please create it and place your CSV files inside.", csvDirectory)
+		logger.Error(
+			"The directory does not exist. Please create it and place your CSV files inside.",
+			"dir", csvDirectory,
+			"error", err,
+		)
+		os.Exit(1)
 	}
 
-	// Call the function from the datalake package
 	client, err := datalake.ConnectToMongoDB(ctx, mongoURI)
 	if err != nil {
-		log.Fatalf("Failed to connect to MongoDB: %v", err)
+		logger.Error("Failed to connect to MongoDB", "error", err)
+		os.Exit(1)
 	}
 
 	defer func() {
 		err = client.Disconnect(ctx)
 		if err != nil {
-			log.Fatalf("Error disconnecting from MongoDB: %v", err)
+			logger.Error("Error disconnecting from MongoDB", "error", err)
 		}
 	}()
 
-	log.Println("Successfully connected to MongoDB.")
+	logger.Info("Successfully connected to MongoDB.")
 
-	// Call the function from the datalake package
 	err = datalake.IngestCSVFiles(ctx, client, csvDirectory)
 	if err != nil {
-		log.Fatalf("Error ingesting CSV files: %v", err)
+		logger.Error("Error ingesting CSV files", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Data ingestion process completed successfully.")
+	logger.Info("Data ingestion process completed successfully.")
 }
