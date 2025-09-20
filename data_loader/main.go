@@ -4,7 +4,8 @@ package main
 import (
 	datalake "babylon/data_loader/datalake"
 	"context"
-	"log/slog" // Change this import from "log" to "log/slog"
+	"fmt"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -18,10 +19,18 @@ const (
 )
 
 func main() {
-	// 1. Create a logger at the main entry point
+	// Create the logger instance at the very beginning.
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Create a new context and inject the logger into it
+	// Fix for noinlineerr: Separate the assignment and the error check.
+	err := run(logger)
+	if err != nil {
+		logger.Error("Application terminated with an error", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run(logger *slog.Logger) error {
 	ctx, cancel := context.WithTimeout(
 		datalake.WithLogger(context.Background(), logger),
 		defaultTimeoutSeconds*time.Second,
@@ -48,36 +57,47 @@ func main() {
 		)
 	}
 
-	_, err := os.Stat(csvDirectory)
+	var err error
+
+	// Fix govet shadowing error. Use existing err variable.
+	_, err = os.Stat(csvDirectory)
 	if err != nil || os.IsNotExist(err) {
 		logger.Error(
 			"The directory does not exist. Please create it and place your CSV files inside.",
 			"dir", csvDirectory,
 			"error", err,
 		)
-		os.Exit(1)
+		// Fix wrapcheck error. Wrap the error before returning.
+		return fmt.Errorf("stat check failed for directory %s: %w", csvDirectory, err)
 	}
 
+	// Fix govet shadowing error. Use existing err variable.
 	client, err := datalake.ConnectToMongoDB(ctx, mongoURI)
 	if err != nil {
 		logger.Error("Failed to connect to MongoDB", "error", err)
-		os.Exit(1)
+		// Fix wrapcheck error. Wrap the error before returning.
+		return fmt.Errorf("connection to MongoDB failed: %w", err)
 	}
 
 	defer func() {
-		err = client.Disconnect(ctx)
-		if err != nil {
+		var deferErr = client.Disconnect(ctx)
+		// Use a local err variable here to avoid shadowing the function-scoped err.
+		if deferErr != nil {
 			logger.Error("Error disconnecting from MongoDB", "error", err)
 		}
 	}()
 
 	logger.Info("Successfully connected to MongoDB.")
 
+	// Fix govet shadowing error. Use existing err variable.
 	err = datalake.IngestCSVFiles(ctx, client, csvDirectory)
 	if err != nil {
 		logger.Error("Error ingesting CSV files", "error", err)
-		os.Exit(1)
+		// Fix wrapcheck error. Wrap the error before returning.
+		return fmt.Errorf("ingestion of CSV files failed: %w", err)
 	}
 
 	logger.Info("Data ingestion process completed successfully.")
+
+	return nil
 }
