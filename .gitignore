@@ -214,3 +214,7 @@ api_spec/schema/*
 
 # Dataloader data dir
 data/
+
+# Golang build artifact from makefile
+out/
+
