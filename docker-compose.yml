@@ -40,6 +40,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # ChromaDB vector store service.
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma
+    restart: unless-stopped
+    ports:
+      - "8003:8000" # Exposes the ChromaDB API port on a less common host port.
+    volumes:
+      - chroma_data:/chroma/data # Persists the ChromaDB data.
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/api/v1/heartbeat || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Your Gunicorn application service.
   babylon-app:
     image: babylon-app:latest # Make sure you have this image built locally.
@@ -52,6 +67,8 @@ services:
         condition: service_started
       postgres:
         condition: service_healthy
+      chroma:
+        condition: service_healthy # Ensure ChromaDB is healthy before starting the app.
     environment:
       # These environment variables link your app to the OpenBao container.
       # The hostname `openbao` is automatically resolved by Docker Compose.
@@ -60,6 +77,8 @@ services:
       # Environment variables for connecting to the PostgreSQL database.
       # The port here must always be 5432 for internal Docker networking.
       - DATABASE_URL=postgresql://user:password@postgres:5432/babylon
+      # Environment variables for connecting to the ChromaDB service.
+      - CHROMA_API_ENDPOINT=http://chroma:8000
       # Your application's other environment variables go here
       # For example:
       # - FLASK_SECRET_KEY=...
@@ -68,3 +87,4 @@ services:
 volumes:
   openbao_data:
   postgres_data:
+  chroma_data: # Define the new volume for ChromaDB.
