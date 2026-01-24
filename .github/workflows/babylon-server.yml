@@ -1,17 +1,18 @@
-# Simplified and corrected GitHub Actions workflow
-name: babylon-server
+name: Babylon Server CI
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_run:
+    workflows: ["Download API Spec"]
+    types:
+      - completed
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   build:
+    if: github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -28,10 +29,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install tox
 
-    - name: Download API spec artifact
-      run: tox -e download-spec
-      env:
-        BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.BABYLON_API_PAT }}
+    - name: Download API spec artifact from workflow run
+      uses: actions/download-artifact@v4
+      with:
+        name: api-spec
+        path: api_spec/
+        run-id: ${{ github.event.workflow_run.id }}
 
     - name: Run checks with tox
       run: |
