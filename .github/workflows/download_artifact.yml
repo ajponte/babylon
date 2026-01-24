@@ -1,0 +1,31 @@
+# .github/workflows/download_artifact.yml
+name: Reusable Download API Spec
+
+on:
+  workflow_call:
+    secrets:
+      BABYLON_API_PAT:
+        required: true
+
+jobs:
+  download_spec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.13"
+      - name: Install tox
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Download API spec artifact
+        run: tox -e download-spec
+        env:
+          BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.BABYLON_API_PAT }}
+      - name: Upload API spec artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-spec
+          path: api_spec/

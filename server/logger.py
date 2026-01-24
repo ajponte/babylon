@@ -1,6 +1,7 @@
 # pylint: disable=line-too-long
 # pylint: disable=too-few-public-methods
 """Logging wrapper."""
+
 from logging.config import dictConfig
 
 # Inspired by: https://github.com/tenable/flask-logging-demo/blob/master/single_file_app_pattern/flask_logs.py
