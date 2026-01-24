@@ -1,9 +1,11 @@
 """Datalake controller handlers."""
+
 from http import HTTPStatus
 import logging
 from datetime import datetime, timezone
 
 _LOGGER = logging.getLogger(__name__)
+
 
 async def sync_status_get() -> tuple:
     """Get the status of the datalake sync."""

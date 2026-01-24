@@ -1,5 +1,6 @@
 # pylint: disable=too-few-public-methods
 """Represents ingress, (money in) from a specific account."""
+
 import logging
 from typing import Optional
 from datetime import datetime, date
