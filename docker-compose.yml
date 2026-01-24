@@ -95,8 +95,23 @@ services:
     volumes:
       - mongo_data:/data/db
     environment:
+      # These environment variables link your app to the OpenBao container.
+      # The hostname `openbao` is automatically resolved by Docker Compose.
+      - BAO_ADDR=http://openbao:8200
+      - BAO_TOKEN=dev-token
       - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_ROOT_PASSWORD=password"
+      # Environment variables for connecting to the PostgreSQL database.
+      # The port here must always be 5432 for internal Docker networking.
+      - DATABASE_URL=postgresql://user:password@postgres:5432/babylon
+      # Environment variables for connecting to the ChromaDB service.
+      - CHROMA_API_ENDPOINT=http://chroma:8000
+      # Environment variables for connecting to the MongoDB service.
+      - MONGO_URI=mongodb://mongodb:27017/
+      # Your application's other environment variables go here
+      # For example:
+      # - FLASK_SECRET_KEY=...
+
 
 # Define volumes for persistent data.
 volumes:
