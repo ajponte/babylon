@@ -1,5 +1,6 @@
 # pylint: disable=too-few-public-methods, unused-import
 """Transaction History service object."""
+
 from enum import StrEnum
 from dataclasses import dataclass
 from datetime import date

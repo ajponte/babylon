@@ -210,4 +210,4 @@ __marimo__/
 .idea/*
 
 # Generated API spec.
-api_spec/schema/*
+api_spec/**/*
