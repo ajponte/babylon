@@ -78,7 +78,7 @@ services:
       # Environment variables for connecting to the ChromaDB service.
       - CHROMA_API_ENDPOINT=http://chroma:8000
       # Environment variables for connecting to the MongoDB service.
-      - MONGO_URI=mongodb://babylon:babylonpass@mongodb:27017/
+      - MONGO_URI=mongodb://babylon:babylonpass@mongodb:27017/datalake
       # Your application's other environment variables go here
       # For example:
       # - FLASK_SECRET_KEY=...
@@ -101,6 +101,7 @@ services:
       - BAO_TOKEN=dev-token
       - MONGO_INITDB_ROOT_USERNAME=babylon
       - MONGO_INITDB_ROOT_PASSWORD=babylonpass
+      - MONGO_INITDB_DATABASE=datalake
       # Environment variables for connecting to the PostgreSQL database.
       # The port here must always be 5432 for internal Docker networking.
       - DATABASE_URL=postgresql://user:password@postgres:5432/babylon
