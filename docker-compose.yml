@@ -78,7 +78,7 @@ services:
       # Environment variables for connecting to the ChromaDB service.
       - CHROMA_API_ENDPOINT=http://chroma:8000
       # Environment variables for connecting to the MongoDB service.
-      - MONGO_URI=mongodb://root:password@mongodb:27017/
+      - MONGO_URI=mongodb://babylon:babylonpass@mongodb:27017/
       # Your application's other environment variables go here
       # For example:
       # - FLASK_SECRET_KEY=...
@@ -99,8 +99,8 @@ services:
       # The hostname `openbao` is automatically resolved by Docker Compose.
       - BAO_ADDR=http://openbao:8200
       - BAO_TOKEN=dev-token
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=password"
+      - MONGO_INITDB_ROOT_USERNAME=babylon
+      - MONGO_INITDB_ROOT_PASSWORD=babylonpass
       # Environment variables for connecting to the PostgreSQL database.
       # The port here must always be 5432 for internal Docker networking.
       - DATABASE_URL=postgresql://user:password@postgres:5432/babylon
