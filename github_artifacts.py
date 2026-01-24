@@ -44,16 +44,14 @@ def get_latest_successful_run_id(repo: str, pat_token: str) -> int:
 
 
 def parse_args():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Download a GitHub artifact. In a CI environment, it will automatically fetch the latest successful artifact if --run-id is not specified.")
     parser.add_argument(
         "--pat-token",
         default=os.environ.get("BABYLON_API_GITHUB_PAT_TOKEN"),
         help="GitHub PAT token (or set BABYLON_API_GITHUB_PAT_TOKEN env var)",
     )
     parser.add_argument('--repo', required=True)
-    parser.add_argument('--latest-successful-run', action='store_true', help='Download artifact from the latest successful run on the main branch.')
-    parser.add_argument('--run-id')
-    parser.add_argument('--artifact-name')
+    parser.add_argument('--run-id', help="The specific workflow run ID to download the artifact from. If not provided in a CI environment, defaults to the latest successful run.")
 
     args = parser.parse_args()
 
@@ -64,9 +62,6 @@ def parse_args():
             "BABYLON_API_GITHUB_PAT_TOKEN environment variable.\n"
         )
         sys.exit(1)
-
-    if not args.latest_successful_run and not (args.run_id and args.artifact_name):
-        parser.error("Either --latest-successful-run or both --run-id and --artifact-name are required.")
 
     return args
 
@@ -128,14 +123,23 @@ if __name__ == "__main__":
     args = parse_args()
     token = args.pat_token
     repo = args.repo
+    run_id = args.run_id
 
-    if args.latest_successful_run:
-        run_id = get_latest_successful_run_id(repo, token)
-        # Assuming the artifact name follows this pattern
-        artifact_name = f"api-spec-{run_id}"
-    else:
-        run_id = args.run_id
-        artifact_name = args.artifact_name
+    # If no run_id is provided, decide what to do based on the environment
+    if not run_id:
+        if os.environ.get('CI') == 'true' or os.environ.get('GITHUB_ACTIONS') == 'true':
+            print("CI environment detected and no --run-id provided. Fetching latest successful run.")
+            run_id = get_latest_successful_run_id(repo, token)
+        else:
+            sys.stderr.write(
+                "Error: Not in a CI environment and no --run-id was provided.\n"
+                "Please specify a run ID via the --run-id argument or by setting the SPEC_RUN_ID environment variable for tox.\n"
+                "Example: SPEC_RUN_ID=12345 tox -e download-spec\n"
+            )
+            sys.exit(1)
+
+    # The artifact name is derived from the run_id
+    artifact_name = f"api-spec-{run_id}"
 
     download_artifact(
         repo=repo,
