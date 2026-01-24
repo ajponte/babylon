@@ -9,8 +9,8 @@ import pytest
 from server.services.transaction_history import TransactionDto
 from tests.conftest import app_client
 
-BASE_URI_TRANSACTIONS = '/api/history/transactions'
-BASE_URI_TRANSACTION = '/api/history/transaction'
+BASE_URI_TRANSACTIONS = '/api/v1/history/transactions'
+BASE_URI_TRANSACTION = '/api/v1/history/transaction'
 HTTP_HEADER_CONTENT_TYPE = 'application/json'
 
 
