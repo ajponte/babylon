@@ -1,6 +1,5 @@
 # pylint: disable=too-few-public-methods
 """Represents egress, (money out) from a specific account."""
-
 import logging
 from typing import Optional
 from datetime import datetime, date

@@ -10,6 +10,7 @@ from server.services.transaction_history import (
     TransactionPersister,
 )
 
+
 _LOGGER = logging.getLogger()
 
 

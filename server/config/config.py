@@ -11,6 +11,7 @@ from server.config.confload import (
     to_bool,
 )
 
+
 CONFIG_LOADERS: list[Loader] = [
     # These are optional for now. Later decide which should be required.
     required(key="BAO_ADDR"),

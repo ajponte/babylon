@@ -1,41 +1,44 @@
+# .github/workflows/babylon-server.yml
 name: Babylon Server CI
 
 on:
-  workflow_run:
-    workflows: ["Download API Spec"]
-    types:
-      - completed
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
+  # This job calls the reusable workflow to download the spec
+  call_download_workflow:
+    uses: ./.github/workflows/download_artifact.yml
+    secrets:
+      BABYLON_API_PAT: ${{ secrets.BABYLON_API_PAT }}
+
+  # This job runs after the reusable workflow and uses its artifact
   build:
-    if: github.event.workflow_run.conclusion == 'success'
+    needs: call_download_workflow
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python: ["3.13"]
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install tox
-      run: |
-        python -m pip install --upgrade pip
-        pip install tox
-
-    - name: Download API spec artifact from workflow run
-      uses: actions/download-artifact@v4
-      with:
-        name: api-spec
-        path: api_spec/
-        run-id: ${{ github.event.workflow_run.id }}
-
-    - name: Run checks with tox
-      run: |
-        tox -e lint,format,pytest
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install tox
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox
+      - name: Download API spec artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: api-spec
+          path: api_spec/
+      - name: Run checks with tox
+        run: |
+          tox -e lint,format,pytest

@@ -1,6 +1,5 @@
 # Note: This script is very much for dev/test purposes only.
 """Utils for interacting with Hashicorp/Openbao."""
-
 from abc import ABC, abstractmethod
 from typing import Any
 import os

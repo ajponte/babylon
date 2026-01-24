@@ -1,14 +1,11 @@
 # .github/workflows/download_artifact.yml
-name: Download API Spec
+name: Reusable Download API Spec
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-permissions:
-  contents: read
+  workflow_call:
+    secrets:
+      BABYLON_API_PAT:
+        required: true
 
 jobs:
   download_spec:
