@@ -19,11 +19,18 @@ RUN poetry install --without test --no-root --sync --no-ansi
 # Copy the rest of your application code into the container.
 COPY . .
 
-# Expose port 8000.
-EXPOSE 8000
+# Install curl for health checks in the startup script.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Set the entrypoint for the container to use poetry's executable.
-ENTRYPOINT ["poetry", "run"]
+# Copy the startup script.
+COPY start.sh .
 
-# The command to run your application using gunicorn.
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "production:application"]
+# Make the startup script executable.
+RUN chmod +x start.sh
+
+# Set the entrypoint for the container to use the startup script.
+ENTRYPOINT ["/bin/bash", "start.sh"]
+
+# CMD is empty as the gunicorn command is now inside start.sh.
+CMD []

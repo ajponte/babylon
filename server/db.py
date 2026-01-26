@@ -23,14 +23,17 @@ class Database:
         :param config: DB Connection configs.
         :param sqlalchemy_base: SQLAlchemy Base.
         """
-        _database_url = _make_sqlalchemy_url(
-            engine=config["SQLALCHEMY_DB_ENGINE"],
-            host=config["DB_HOST"],
-            port=config["DB_PORT"],
-            user=config["DB_USERNAME"],
-            passwd=config["DB_PASSWORD"],
-            database=config["SQLALCHEMY_DATABASE_NAME"],
-        )
+        if "SQLALCHEMY_DATABASE_URL" in config:
+            _database_url = config["SQLALCHEMY_DATABASE_URL"]
+        else:
+            _database_url = _make_sqlalchemy_url(
+                engine=config["SQLALCHEMY_DB_ENGINE"],
+                host=config["DB_HOST"],
+                port=config["DB_PORT"],
+                user=config["DB_USERNAME"],
+                passwd=config["DB_PASSWORD"],
+                database=config["SQLALCHEMY_DATABASE_NAME"],
+            )
         # Determines how often (in seconds) the connection pool should refresh.
         pool_recycle = config["SQLALCHEMY_POOL_RECYCLE"]
         self._engine = create_engine(url=_database_url, pool_recycle=pool_recycle)

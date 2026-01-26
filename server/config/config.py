@@ -15,7 +15,7 @@ CONFIG_LOADERS: list[Loader] = [
     # These are optional for now. Later decide which should be required.
     required(key="BAO_ADDR"),
     required(key="OPENBAO_SECRETS_PATH"),
-    # required(key="SQLALCHEMY_DATABASE_URL"),
+    required(key="SQLALCHEMY_DATABASE_URL"),
     required(key="SQLALCHEMY_DB_ENGINE"),
     required(key="SQLALCHEMY_DATABASE_NAME"),
     optional(key="LOG_TYPE", default_val="stdout"),
@@ -25,10 +25,10 @@ CONFIG_LOADERS: list[Loader] = [
 ]
 
 SECRETS_LOADERS: list[Loader] = [
-    required_secret(key="DB_HOST", path="test"),
-    required_secret(key="DB_PORT", path="test"),
-    required_secret(key="DB_USERNAME", path="test"),
-    required_secret(key="DB_PASSWORD", path="test"),
+    optional(key="DB_HOST", default_val="localhost"),
+    optional(key="DB_PORT", default_val="5432", converter=to_int),
+    optional(key="DB_USERNAME", default_val="user"),
+    optional(key="DB_PASSWORD", default_val="password"),
 ]
 
 
