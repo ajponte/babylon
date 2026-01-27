@@ -45,10 +45,11 @@ class SecretsManagerException(Exception):
 class OpenBaoApiClient:
     """API client wrapper for OpenBao."""
 
-    def __init__(self):
+    def __init__(self, url: str | None = None):
         """Constructor."""
         # todo: Add RSA cert
-        url = os.environ.get("BAO_ADDR", None)
+        if url is None:
+            url = os.environ.get("BAO_ADDR", None)
         _LOGGER.info(f"Connecting to OpenBao at: {url}")
         self._client = hvac.Client(
             # `BAO_ADDR`, `VAULT_TOKEN` are the suggested env var names from Hashicorp.

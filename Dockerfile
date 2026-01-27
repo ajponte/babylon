@@ -14,7 +14,8 @@ COPY .env .
 RUN pip install poetry
 
 # Install the dependencies and create a virtual environment within the container.
-RUN poetry install --without test --no-root --sync --no-ansi
+RUN poetry install --no-root --sync --no-ansi
+RUN poetry run pip install psycopg2-binary
 
 # Copy the rest of your application code into the container.
 COPY . .

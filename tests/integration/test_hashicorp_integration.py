@@ -7,7 +7,8 @@ def test_read_secret_from_openbao_integration():
     """
     Test that the Flask app can read a secret from OpenBao.
     """
-    client = OpenBaoApiClient()
+    bao_addr = os.environ.get("BAO_ADDR", "http://openbao:8200")
+    client = OpenBaoApiClient(url=bao_addr)
     path = "secret/database"
     key = "url"
     expected_value = "postgresql://user:password@postgres:5432/babylon"
