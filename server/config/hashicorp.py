@@ -48,10 +48,12 @@ class OpenBaoApiClient:
     def __init__(self):
         """Constructor."""
         # todo: Add RSA cert
+        url = os.environ.get("BAO_ADDR", None)
+        _LOGGER.info(f"Connecting to OpenBao at: {url}")
         self._client = hvac.Client(
             # `BAO_ADDR`, `VAULT_TOKEN` are the suggested env var names from Hashicorp.
-            url=os.environ.get("BAO_ADDR", None),
-            token=os.environ.get("VAULT_TOKEN", None),
+            url=url,
+            token=os.environ.get("BAO_TOKEN", None),
         )
         self.__is_authenticated(self._client)
         _LOGGER.info("Hashicorp Secrets client authenticated.")
@@ -171,38 +173,4 @@ class BaoSecretsManager(AbstractSecretsManager):
         return {"key": key, "val": self._secrets[key]}
 
 
-# def test_bao_api_client():
-#     client = OpenBaoApiClient()
-#
-#     client.add_secret_value(path='test', secret={'foo': 'bar'})
-#
-#     resp = client.read_secret_values(path='test')
-#     print(f'resp: {resp}')
-#
-# def test_secrets_manager():
-#     path = 'test'
-#     secrets_manager = BaoSecretsManager()
-#     secrets_manager.add_secret(
-#         path=path,
-#         secret={'foo': 'bar'}
-#     )
-#
-#     secrets_manager.add_secret(
-#         path=path,
-#         secret={'bazz': 'lazz'}
-#     )
-#
-#     # secrets_manager.add_secret(
-#     #     path=path,
-#     #     secret={'foo': 'bar'}
-#     # )
-#     resp = secrets_manager.get_secret(path=path, key='foo')
-#
-#     assert resp == {'key': 'foo', 'val': 'bar'}
-#
-#     resp = secrets_manager.get_secret(path=path, key='bazz')
-#
-#     assert resp == {'key': 'bazz', 'val': 'lazz'}
-#
-# test_secrets_manager()
-# test_bao_api_client()
+

@@ -23,8 +23,8 @@ class Database:
         :param config: DB Connection configs.
         :param sqlalchemy_base: SQLAlchemy Base.
         """
-        if "SQLALCHEMY_DATABASE_URL" in config:
-            _database_url = config["SQLALCHEMY_DATABASE_URL"]
+        if "DATABASE_URL" in config: # Changed check from SQLALCHEMY_DATABASE_URL
+            _database_url = config["DATABASE_URL"]
         else:
             _database_url = _make_sqlalchemy_url(
                 engine=config["SQLALCHEMY_DB_ENGINE"],

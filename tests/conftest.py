@@ -21,10 +21,7 @@ MOCK_ENV_VARS = {
 os.environ.update(MOCK_ENV_VARS)
 
 MOCK_SECRETS = {
-    'DB_HOST': 'https://mock-host.com',
-    'DB_PORT': '5432',
-    'DB_USERNAME': 'dummy',
-    'DB_PASSWORD': 'dummy'
+    'url': 'postgresql://user:password@postgres:5432/babylon'
 }
 
 MOCK_HVAC_RESPONSE = {
@@ -36,7 +33,7 @@ MOCK_HVAC_RESPONSE = {
     }
 }
 
-@fixture(scope='session', autouse=True)
+@fixture(scope='session')
 def hvac_client():
     """
     Changed the scope to 'session' to match mock_bao_client.

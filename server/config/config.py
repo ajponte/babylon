@@ -10,14 +10,11 @@ from server.config.confload import (
     to_int,
     to_bool,
 )
+from server.config.hashicorp import BaoSecretsManager
 
 CONFIG_LOADERS: list[Loader] = [
-    # These are optional for now. Later decide which should be required.
     required(key="BAO_ADDR"),
     required(key="OPENBAO_SECRETS_PATH"),
-    required(key="SQLALCHEMY_DATABASE_URL"),
-    required(key="SQLALCHEMY_DB_ENGINE"),
-    required(key="SQLALCHEMY_DATABASE_NAME"),
     optional(key="LOG_TYPE", default_val="stdout"),
     optional(key="LOG_LEVEL", default_val="DEBUG"),
     optional(key="SQLALCHEMY_POOL_RECYCLE", default_val="3600", converter=to_int),
@@ -26,6 +23,8 @@ CONFIG_LOADERS: list[Loader] = [
 
 SECRETS_LOADERS: list[Loader] = [
     optional(key="DB_HOST", default_val="localhost"),
+    optional(key="SQLALCHEMY_DB_ENGINE", default_val="postgresql"),
+    optional(key="SQLALCHEMY_DATABASE_NAME", default_val="babylon"),
     optional(key="DB_PORT", default_val="5432", converter=to_int),
     optional(key="DB_USERNAME", default_val="user"),
     optional(key="DB_PASSWORD", default_val="password"),
@@ -48,3 +47,16 @@ def update_config_from_secrets(config: dict[str, Any]) -> None:
     :param config: The config dict to update.
     """
     config.update(dict(loader() for loader in SECRETS_LOADERS))
+
+
+def load_hashicorp_secrets() -> None:
+    """
+    Load mock secrets into Hashicorp for local development.
+    """
+    secrets_manager = BaoSecretsManager()
+    secrets_manager.add_secret(
+        path="secret/database",
+        secret={
+            "url": "postgresql://user:password@postgres:5432/babylon"
+        }
+    )
