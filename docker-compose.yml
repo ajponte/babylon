@@ -67,6 +67,33 @@ services:
     networks:
       - babylon
 
+  # ZenML server service for orchestrating RAG pipelines.
+  zenml:
+    build:
+      context: .
+      dockerfile: zenml.Dockerfile
+    image: zenml-server:latest
+    container_name: zenml
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    volumes:
+      - zenml_data:/zenml/storage # Persists the ZenML data.
+    environment:
+      - ZENML_SERVER_HOST=0.0.0.0
+      - ZENML_SERVER_PORT=8080
+      - ZENML_DEFAULT_USER_NAME=admin
+      - ZENML_DEFAULT_USER_PASSWORD=Babylon@123
+      - ZENML_SERVER_AUTO_ACTIVATE=1
+      # By default, ZenML will use a local SQLite database in /zenml/storage.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    networks:
+      - babylon
+
   # Your Gunicorn application service.
   babylon-app:
     build:
@@ -88,6 +115,8 @@ services:
         condition: service_started # Ensure MongoDB is started.
       qdrant:
         condition: service_started
+      zenml:
+        condition: service_started
     environment:
       # These environment variables link your app to the OpenBao container.
       # The hostname `openbao` is automatically resolved by Docker Compose.
@@ -103,6 +132,8 @@ services:
       # Environment variables for connecting to the Qdrant service.
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+      # Environment variable for connecting to the ZenML server.
+      - ZENML_SERVER_URL=http://zenml:8080
     networks:
       - babylon
 
@@ -142,6 +173,7 @@ volumes:
   chroma_data: # Define the new volume for ChromaDB.
   mongo_data: # Define the new volume for MongoDB.
   qdrant_data: # Define the new volume for Qdrant.
+  zenml_data: # Define the new volume for ZenML.
 
 # Define the network for all services.
 networks:
