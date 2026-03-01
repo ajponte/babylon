@@ -1,0 +1,6 @@
+- name: Deploy OpenBao on Digital Ocean
+  hosts: openbao_servers
+  become: yes
+  roles:
+    - common
+    - openbao

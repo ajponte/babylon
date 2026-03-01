@@ -1,0 +1,49 @@
+- name: Create OpenBao deployment directory
+  file:
+    path: /opt/openbao
+    state: directory
+    mode: '0755'
+
+- name: Create certs and config directories
+  file:
+    path: "/opt/openbao/{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - certs
+    - config
+
+- name: Copy deployment files
+  copy:
+    src: "../{{ item }}"
+    dest: "/opt/openbao/{{ item }}"
+    mode: '0644'
+  loop:
+    - Dockerfile
+    - docker-compose.yml
+    - nginx.conf
+
+- name: Copy config file
+  copy:
+    src: "../config/config.hcl"
+    dest: "/opt/openbao/config/config.hcl"
+    mode: '0644'
+
+- name: Generate self-signed certificate if it doesn't exist
+  shell: |
+    if [ ! -f /opt/openbao/certs/openbao.crt ]; then
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 
+        -keyout /opt/openbao/certs/openbao.key 
+        -out /opt/openbao/certs/openbao.crt 
+        -subj "/C=US/ST=State/L=City/O=Babylon/OU=Ops/CN=openbao"
+    fi
+  args:
+    executable: /bin/bash
+
+- name: Start Docker Compose stack
+  docker_compose:
+    project_src: /opt/openbao
+    state: present
+    build: yes
+    pull: yes
+    recreate: always

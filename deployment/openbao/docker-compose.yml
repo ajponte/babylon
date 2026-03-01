@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  openbao:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openbao
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - openbao_data:/openbao/data
+      - ./config:/openbao/config
+    environment:
+      - BAO_LOG_LEVEL=info
+      - BAO_ADDR=http://0.0.0.0:8200
+    networks:
+      - openbao_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8200/v1/sys/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  nginx:
+    image: nginx:alpine
+    container_name: openbao-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - openbao
+    networks:
+      - openbao_network
+
+volumes:
+  openbao_data:
+
+networks:
+  openbao_network:
+    driver: bridge
