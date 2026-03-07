@@ -1,0 +1,33 @@
+name: Deploy Babylon Artifact
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        default: 'latest'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.13"
+          
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install tox requests
+          
+      - name: Build and Upload Artifact
+        run: |
+          python artifact_upload.py --repo ${{ github.repository }} --tag ${{ github.event.inputs.tag || 'latest' }}
+        env:
+          BABYLON_API_GITHUB_PAT_TOKEN: ${{ secrets.BABYLON_API_PAT }}
