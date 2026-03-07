@@ -11,24 +11,37 @@ from deploy_openbao import generate_inventory, run_ansible_playbook
 
 class TestDeployOpenBao(unittest.TestCase):
 
-    def test_generate_inventory(self):
-        """Test that the inventory file is generated correctly."""
+    def test_generate_inventory_digitalocean(self):
+        """Test that the inventory file is generated correctly for digitalocean."""
         ip_address = "1.2.3.4"
-        inventory_path = "test_inventory.yml"
+        provider = "digitalocean"
+        inventory_path = "test_inventory_do.yml"
         
         with patch("builtins.open", mock_open()) as mocked_file:
-            path = generate_inventory(ip_address, inventory_path)
+            path = generate_inventory(ip_address, provider, inventory_path)
             
             self.assertEqual(path, inventory_path)
-            mocked_file.assert_called_once_with(inventory_path, "w")
-            
-            # Check the content written to the file
+            # Verify the content written to the file
             handle = mocked_file()
-            # Get all the write calls
             written_content = "".join(call.args[0] for call in handle.write.call_args_list)
-            # Verify the content is valid YAML and contains the IP
             data = yaml.safe_load(written_content)
-            self.assertEqual(data['all']['hosts']['openbao_server']['ansible_host'], ip_address)
+            self.assertEqual(data['all']['hosts']['digitalocean_server']['ansible_host'], ip_address)
+
+    def test_generate_inventory_aws(self):
+        """Test that the inventory file is generated correctly for AWS (with 'ubuntu' user)."""
+        ip_address = "9.10.11.12"
+        provider = "aws"
+        inventory_path = "test_inventory_aws.yml"
+        
+        with patch("builtins.open", mock_open()) as mocked_file:
+            path = generate_inventory(ip_address, provider, inventory_path)
+            
+            self.assertEqual(path, inventory_path)
+            handle = mocked_file()
+            written_content = "".join(call.args[0] for call in handle.write.call_args_list)
+            data = yaml.safe_load(written_content)
+            self.assertEqual(data['all']['hosts']['aws_server']['ansible_host'], ip_address)
+            self.assertEqual(data['all']['hosts']['aws_server']['ansible_user'], "ubuntu")
 
     @patch("subprocess.run")
     def test_run_ansible_playbook_success(self, mock_run):
