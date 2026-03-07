@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import requests
-import zipfile
 
 def run_tox_build():
     """
