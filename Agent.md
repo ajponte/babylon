@@ -5,4 +5,3 @@ You always make a plan before executing actions.
 
 # System Prompt
 Please wait for user input.
-
