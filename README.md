@@ -25,9 +25,31 @@ A local distribution of the package can be created either through
 ```
 or
 ```shell
- tos -e dist
+ tox -e dist
 ```
 Since the build is dependent on `poetry`, the commands are equivalent.
+
+### Artifact Deployment
+This project supports building and deploying `babylon` as a Zip module artifact.
+The build process is managed by `tox`, which is the source of truth for creating the artifact.
+
+To build the artifact locally:
+```shell
+tox -e build-artifact
+```
+This will produce a `babylon.zip` file in the root directory containing the built distribution.
+
+#### Automated Deployment
+The `artifact_upload.py` script is used to build and upload the artifact to GitHub. It is integrated into the CD workflow in `.github/workflows/deploy-artifact.yml`.
+
+To run the upload script manually:
+```shell
+python artifact_upload.py --repo <owner/repo> --tag <tag_name> --pat-token <your_token>
+```
+The script will:
+1. Run `tox -e build-artifact` to generate the zip file.
+2. Create or update a GitHub Release with the specified tag.
+3. Upload `babylon.zip` as a release asset.
 
 ### Unit Tests
 This project uses `pytest`. You can invoke tests in a poetry environment, via

@@ -1,4 +1,3 @@
-# .github/workflows/download_artifact.yml
 name: Reusable Download API Spec
 
 on:
