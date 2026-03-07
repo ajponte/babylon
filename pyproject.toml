@@ -5,6 +5,7 @@ description = "Babylon Server"
 authors = ["Alan Ponte <alanjponte@gmail.com>"]
 readme = "README.md"
 #packages = [{ include = "your_package_name" }]  # or remove if not using a package dir
+exclude = ["api_spec", "tests", "test-data", ".github", ".tox", "var"]
 
 [tool.poetry.dependencies]
 python = "^3.13"

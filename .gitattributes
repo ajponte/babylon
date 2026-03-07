@@ -1,0 +1,19 @@
+# Ensure that certain directories are not included in source distributions or archives
+api_spec/ export-ignore
+tests/ export-ignore
+test-data/ export-ignore
+.github/ export-ignore
+.idea/ export-ignore
+.mypy_cache/ export-ignore
+.pytest_cache/ export-ignore
+.tox/ export-ignore
+var/ export-ignore
+.gitignore export-ignore
+.pylintrc export-ignore
+tox.ini export-ignore
+pyproject.toml export-ignore
+poetry.lock export-ignore
+README.md export-ignore
+LICENSE export-ignore
+*.md export-ignore
+*.sh export-ignore
